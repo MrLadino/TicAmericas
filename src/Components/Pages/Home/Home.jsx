@@ -1,5 +1,5 @@
 // src/Components/Pages/Home/Home.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import slider1 from "../../../assets/Slider1.png";
 import slider2 from "../../../assets/Slider2.png";
 
@@ -102,7 +102,7 @@ const Home = () => {
             <div className="w-full md:w-1/3 p-4">
               <blockquote className="bg-white p-6 rounded-lg shadow-lg">
                 <p className="text-gray-700">
-                  "Este sistema ha transformado completamente la manera en que gestiono mis actividades diarias. ¡Altamente recomendado!"
+                  Este sistema ha transformado completamente la manera en que gestiono mis actividades diarias. ¡Altamente recomendado!
                 </p>
                 <footer className="mt-4 text-sm text-gray-500">- Juan Pérez</footer>
               </blockquote>
@@ -110,7 +110,7 @@ const Home = () => {
             <div className="w-full md:w-1/3 p-4">
               <blockquote className="bg-white p-6 rounded-lg shadow-lg">
                 <p className="text-gray-700">
-                  "La interfaz es tan fácil de usar que todo mi equipo la adoptó sin problemas. ¡Gracias por hacerlo tan simple!"
+                  La interfaz es tan fácil de usar que todo mi equipo la adoptó sin problemas. ¡Gracias por hacerlo tan simple!
                 </p>
                 <footer className="mt-4 text-sm text-gray-500">- María López</footer>
               </blockquote>

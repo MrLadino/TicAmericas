@@ -1,4 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import {
+  filtrarProductosPorCategoria,
+  agregarProducto,
+  agregarCategoria,
+  actualizarCategoria,
+  actualizarBusqueda,
+  eliminarProducto, // Asegúrate de que este método esté implementado
+} from './PdtsLogica'; // Asegúrate de que la ruta sea correcta
 
 const Productos = () => {
   const [productos, setProductos] = useState([
@@ -8,55 +16,139 @@ const Productos = () => {
 
   const [categorias, setCategorias] = useState(['General', 'Electrónica', 'Ropa', 'Comida']);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('General');
-  const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', descripcion: '', imagen: '', precio: '', categoria: '' });
-  const [imagenLocal, setImagenLocal] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [ultimasBusquedas, setUltimasBusquedas] = useState([]);
+  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
+  const [tipoEdicion, setTipoEdicion] = useState('');
+  const [productoEditar, setProductoEditar] = useState(null);
+  const [categoriaEditar, setCategoriaEditar] = useState('');
 
-  const productosFiltrados = productos.filter((producto) => producto.categoria === categoriaSeleccionada);
+  const productosFiltrados = filtrarProductosPorCategoria(productos, categoriaSeleccionada);
 
-  const agregarProducto = () => {
-    const nuevaImagen = imagenLocal
-      ? URL.createObjectURL(imagenLocal)
-      : 'https://via.placeholder.com/150';
-
-    setProductos([
-      ...productos,
-      {
-        id: productos.length + 1,
-        nombre: nuevoProducto.nombre,
-        descripcion: nuevoProducto.descripcion,
-        imagen: nuevaImagen,
-        precio: parseFloat(nuevoProducto.precio) || 0,
-        categoria: nuevoProducto.categoria || categoriaSeleccionada,
-      },
-    ]);
-    setNuevoProducto({ nombre: '', descripcion: '', imagen: '', precio: '', categoria: '' });
-    setImagenLocal(null);
+  const agregarNuevoProducto = (nuevoProducto) => {
+    if (!nuevoProducto.nombre.trim() || isNaN(nuevoProducto.precio) || nuevoProducto.precio <= 0) {
+      alert('Por favor, completa todos los campos correctamente.');
+      return;
+    }
+    setProductos(agregarProducto(productos, nuevoProducto));
+    setMostrarModalEditar(false);
   };
 
-  const agregarCategoria = () => {
-    const nuevaCategoria = prompt('Ingrese el nombre de la nueva categoría');
-    if (nuevaCategoria && !categorias.includes(nuevaCategoria)) {
-      setCategorias([...categorias, nuevaCategoria]);
+  const manejarGuardarCambiosProducto = (productoActualizado) => {
+    if (!productoActualizado.nombre.trim() || isNaN(productoActualizado.precio) || productoActualizado.precio <= 0) {
+      alert('Por favor, completa todos los campos correctamente.');
+      return;
+    }
+    const productosActualizados = productos.map((producto) =>
+      producto.id === productoActualizado.id ? productoActualizado : producto
+    );
+    setProductos(productosActualizados);
+    setMostrarModalEditar(false);
+  };
+
+  const agregarNuevaCategoria = (nuevaCategoria) => {
+    if (!nuevaCategoria.trim()) {
+      alert('La categoría no puede estar vacía.');
+      return;
+    }
+    if (categorias.includes(nuevaCategoria.trim())) {
+      alert('La categoría ya existe.');
+      return;
+    }
+    setCategorias(agregarCategoria(categorias, nuevaCategoria));
+    setMostrarModalEditar(false);
+  };
+
+  const editarCategoriaSeleccionada = () => {
+    if (!categoriaEditar.trim()) {
+      alert('El nombre de la categoría no puede estar vacío.');
+      return;
+    }
+    if (categorias.includes(categoriaEditar.trim())) {
+      alert('Ya existe una categoría con ese nombre.');
+      return;
+    }
+    const categoriasActualizadas = actualizarCategoria(categorias, categoriaSeleccionada, categoriaEditar);
+    setCategorias(categoriasActualizadas);
+    setCategoriaSeleccionada(categoriaEditar);
+    setMostrarModalEditar(false);
+  };
+
+  const manejarBusqueda = (e) => {
+    const termino = e.target.value.trim();
+    setBusqueda(termino);
+    setUltimasBusquedas(actualizarBusqueda(termino, ultimasBusquedas));
+  };
+
+  const abrirModalProducto = (tipo, producto = null) => {
+    setTipoEdicion(tipo);
+    setProductoEditar(
+      producto || { id: Date.now(), nombre: '', descripcion: '', imagen: '', precio: '', categoria: categoriaSeleccionada }
+    );
+    setCategoriaEditar('');
+    setMostrarModalEditar(true);
+  };
+
+  const abrirModalCategoria = (tipo, categoria = '') => {
+    setTipoEdicion(tipo);
+    setCategoriaEditar(categoria);
+    setProductoEditar(null);
+    setMostrarModalEditar(true);
+  };
+
+  const eliminarProductoSeleccionado = (id) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+      const productosActualizados = productos.filter((producto) => producto.id !== id);
+      setProductos(productosActualizados);
     }
   };
 
   return (
     <div className="container mx-auto p-6">
-      {/* Barra de categorías */}
-      <div className="flex space-x-4 mb-4 bg-gray-100 p-4 rounded-md shadow-md">
-        {categorias.map((categoria) => (
-          <button
-            key={categoria}
-            onClick={() => setCategoriaSeleccionada(categoria)}
-            className={`py-2 px-4 rounded-md ${
-              categoria === categoriaSeleccionada
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-200 text-gray-800 hover:bg-red-200'
-            }`}
+      {/* Controles de categoría */}
+      <div className="flex items-center justify-between mb-6 bg-gray-100 p-4 rounded-md shadow-md">
+        <div className="flex space-x-4 items-center">
+          <select
+            value={categoriaSeleccionada}
+            onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+            className="p-2 border rounded-md bg-white"
           >
-            {categoria}
+            {categorias.map((categoria) => (
+              <option key={categoria} value={categoria}>
+                {categoria}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => abrirModalCategoria('agregar')}
+            className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700"
+          >
+            Agregar categoría
           </button>
-        ))}
+          <button
+            onClick={() => abrirModalCategoria('editar', categoriaSeleccionada)}
+            className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+          >
+            Editar categoría
+          </button>
+        </div>
+      </div>
+
+      {/* Controles de producto */}
+      <div className="flex items-center justify-between mb-6 bg-gray-100 p-4 rounded-md shadow-md">
+        <input
+          type="text"
+          value={busqueda}
+          onChange={manejarBusqueda}
+          placeholder="Buscar producto"
+          className="p-2 border rounded-md w-64"
+        />
+        <button
+          onClick={() => abrirModalProducto('agregar')}
+          className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700"
+        >
+          Agregar producto
+        </button>
       </div>
 
       {/* Tabla de productos */}
@@ -68,6 +160,7 @@ const Productos = () => {
               <th className="border border-gray-300 px-4 py-2 text-left">Nombre</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Descripción</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Precio</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -78,69 +171,114 @@ const Productos = () => {
                 </td>
                 <td className="border border-gray-300 px-4 py-2">{producto.nombre}</td>
                 <td className="border border-gray-300 px-4 py-2">{producto.descripcion}</td>
-                <td className="border border-gray-300 px-4 py-2">${producto.precio.toFixed(2)}</td>
+                <td className="border border-gray-300 px-4 py-2">
+                  ${producto.precio.toFixed(2)}
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  <button
+                    onClick={() => abrirModalProducto('editar', producto)}
+                    className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => eliminarProductoSeleccionado(producto.id)}
+                    className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 ml-2"
+                  >
+                    Eliminar
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Botón flotante para agregar categorías */}
-      <button
-        onClick={agregarCategoria}
-        className="fixed bottom-6 right-6 bg-red-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700"
-      >
-        +
-      </button>
-
-      {/* Formulario de agregar producto */}
-      <div className="mt-6 p-4 border border-gray-200 rounded-md shadow-md">
-        <h3 className="text-xl font-semibold mb-4">Agregar Producto</h3>
-        <input
-          type="text"
-          placeholder="Nombre del producto"
-          value={nuevoProducto.nombre}
-          onChange={(e) => setNuevoProducto({ ...nuevoProducto, nombre: e.target.value })}
-          className="w-full mb-3 p-2 border rounded-md"
-        />
-        <textarea
-          placeholder="Descripción del producto"
-          value={nuevoProducto.descripcion}
-          onChange={(e) => setNuevoProducto({ ...nuevoProducto, descripcion: e.target.value })}
-          className="w-full mb-3 p-2 border rounded-md"
-        />
-        <input
-          type="number"
-          placeholder="Precio"
-          value={nuevoProducto.precio}
-          onChange={(e) => setNuevoProducto({ ...nuevoProducto, precio: e.target.value })}
-          className="w-full mb-3 p-2 border rounded-md"
-        />
-        <select
-          value={nuevoProducto.categoria}
-          onChange={(e) => setNuevoProducto({ ...nuevoProducto, categoria: e.target.value })}
-          className="w-full mb-3 p-2 border rounded-md"
-        >
-          <option value="">Seleccionar Categoría</option>
-          {categorias.map((categoria) => (
-            <option key={categoria} value={categoria}>
-              {categoria}
-            </option>
-          ))}
-        </select>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImagenLocal(e.target.files[0])}
-          className="w-full mb-3 p-2 border rounded-md"
-        />
-        <button
-          onClick={agregarProducto}
-          className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
-        >
-          Agregar Producto
-        </button>
-      </div>
+      {/* Modal */}
+      {mostrarModalEditar && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-md w-96">
+            <h3 className="text-xl mb-4">
+              {tipoEdicion === 'agregar' ? 'Agregar' : 'Editar'} {productoEditar ? 'Producto' : 'Categoría'}
+            </h3>
+            {productoEditar ? (
+              <>
+                <input
+                  type="text"
+                  value={productoEditar.nombre}
+                  onChange={(e) => setProductoEditar({ ...productoEditar, nombre: e.target.value })}
+                  placeholder="Nombre"
+                  className="p-2 border mb-4 w-full"
+                />
+                <input
+                  type="text"
+                  value={productoEditar.descripcion}
+                  onChange={(e) => setProductoEditar({ ...productoEditar, descripcion: e.target.value })}
+                  placeholder="Descripción"
+                  className="p-2 border mb-4 w-full"
+                />
+                <input
+                  type="number"
+                  value={productoEditar.precio}
+                  onChange={(e) => setProductoEditar({ ...productoEditar, precio: parseFloat(e.target.value) })}
+                  placeholder="Precio"
+                  className="p-2 border mb-4 w-full"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setProductoEditar({ ...productoEditar, imagen: reader.result });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="p-2 border mb-4 w-full"
+                />
+                {productoEditar.imagen && (
+                  <img src={productoEditar.imagen} alt="Vista previa" className="w-32 h-32 object-cover mt-4" />
+                )}
+              </>
+            ) : (
+              <input
+                type="text"
+                value={categoriaEditar}
+                onChange={(e) => setCategoriaEditar(e.target.value)}
+                placeholder="Nombre de la categoría"
+                className="p-2 border mb-4 w-full"
+              />
+            )}
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setMostrarModalEditar(false)}
+                className="bg-gray-500 text-white py-2 px-4 rounded-md"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (productoEditar) {
+                    tipoEdicion === 'agregar'
+                      ? agregarNuevoProducto(productoEditar)
+                      : manejarGuardarCambiosProducto(productoEditar);
+                  } else if (tipoEdicion === 'editar') {
+                    editarCategoriaSeleccionada();
+                  } else {
+                    agregarNuevaCategoria(categoriaEditar);
+                  }
+                }}
+                className="bg-blue-600 text-white py-2 px-4 rounded-md"
+              >
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
