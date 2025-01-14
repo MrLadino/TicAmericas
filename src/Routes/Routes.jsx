@@ -1,26 +1,27 @@
-// src/Routes/Routes.jsx
-import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
+import { useAuth } from "../Context/AuthContext";
 import Home from "../Components/Pages/Home/Home";
 import Login from "../Components/Pages/Login/Login";
-
-
-import Nosotros from "../Components/Pages/Nosotros/Nosotros";
+import IniciarPrograma from "../Components/Pages/IniciarPrograma/IniciarPrograma";
 import Productos from "../Components/Pages/Productos/Productos";
 import Profile from "../Components/Pages/Profile/Profile";
 import SignUp from "../Components/Pages/SignUp/SignUp";
-import Ayuda from "../Components/Pages/Ayuda/Ayuda"; // Importa el componente Ayuda
+import Ayuda from "../Components/Pages/Ayuda/Ayuda";
 
 const AppRoutes = () => {
+  const { authenticated } = useAuth();
+
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={!authenticated ? <Navigate to="/login" /> : <Navigate to="/home" />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/nosotros" element={<Nosotros />} />
-      <Route path="/productos" element={<Productos />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route path="/home" element={authenticated ? <Home /> : <Navigate to="/login" />} />
+      <Route path="/iniciarPrograma" element={authenticated ? <IniciarPrograma /> : <Navigate to="/login" />} />
+      <Route path="/productos" element={authenticated ? <Productos /> : <Navigate to="/login" />} />
+      <Route path="/profile" element={authenticated ? <Profile /> : <Navigate to="/login" />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/ayuda" element={<Ayuda />} /> {/* Agrega la ruta de Ayuda */}
+      <Route path="/ayuda" element={authenticated ? <Ayuda /> : <Navigate to="/login" />} />
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
 };
