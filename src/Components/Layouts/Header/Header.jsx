@@ -2,10 +2,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../Context/AuthContext"; // Importa el hook
 import logo from "../../../assets/Logo.png";
 import exitImg from "../../../assets/Exit.png"; // Importa la imagen para el logout
+import { useLocation } from 'react-router-dom'; // Importa useLocation para acceder a la ruta actual
 
 const Header = () => {
   const { logout, authenticated } = useAuth(); // Usamos el hook aquí
   const navigate = useNavigate();
+  const location = useLocation(); // Usamos useLocation para obtener la ruta actual
 
   const handleLogout = () => {
     if (authenticated) {
@@ -29,11 +31,30 @@ const Header = () => {
         
         {/* Navegación */}
         <nav className="space-x-4 flex-grow flex justify-center">
-          <Link to="/" className="text-xl font-bold text-[#f0f0f0] hover:underline">Inicio</Link>
-          <Link to="/iniciarPrograma" className="text-xl font-bold text-[#f0f0f0] hover:underline">Iniciar</Link>
-          <Link to="/productos" className="text-xl font-bold text-[#f0f0f0] hover:underline">Productos</Link>
-          <Link to="/profile" className="text-xl font-bold text-[#f0f0f0] hover:underline">Perfil</Link>
-          <Link to="/ayuda" className="text-xl font-bold text-[#f0f0f0] hover:underline">Ayuda</Link>
+          {/* Solo mostrar "Inicio" si no estamos ya en esa ruta */}
+          {location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/signup' && (
+            <Link to="/" className="text-xl font-bold text-[#f0f0f0] hover:underline">Inicio</Link>
+          )}
+
+          {/* Solo mostrar "Iniciar" si no estamos ya en esa ruta */}
+          {location.pathname !== '/iniciarPrograma' && location.pathname !== '/login' && location.pathname !== '/signup' && (
+            <Link to="/iniciarPrograma" className="text-xl font-bold text-[#f0f0f0] hover:underline">Iniciar</Link>
+          )}
+
+          {/* Solo mostrar "Productos" si el usuario está autenticado */}
+          {authenticated && location.pathname !== '/productos' && (
+            <Link to="/productos" className="text-xl font-bold text-[#f0f0f0] hover:underline">Productos</Link>
+          )}
+          
+          {/* Solo mostrar "Perfil" si el usuario está autenticado */}
+          {authenticated && location.pathname !== '/profile' && (
+            <Link to="/profile" className="text-xl font-bold text-[#f0f0f0] hover:underline">Perfil</Link>
+          )}
+
+          {/* Solo mostrar "Ayuda" si el usuario está autenticado */}
+          {authenticated && location.pathname !== '/ayuda' && (
+            <Link to="/ayuda" className="text-xl font-bold text-[#f0f0f0] hover:underline">Ayuda</Link>
+          )}
         </nav>
         
         {/* Botón de Logout con imagen */}
@@ -46,7 +67,6 @@ const Header = () => {
             alt="Salir"
             className="h-8 w-8 mr-2"
           />
-          {/* <span className="text-[#f0f0f0]">Cerrar Sesión</span> */}
         </button>
       </div>
     </header>
