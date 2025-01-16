@@ -1,5 +1,3 @@
-import React from "react";
-
 const Main = () => {
   return (
     <main className="flex flex-1 flex-col bg-gray-50">

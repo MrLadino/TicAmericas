@@ -1,56 +1,14 @@
-import { useState } from 'react';
+import { useProfile } from "./Perfil";
 
 const Profile = () => {
-  const [editing, setEditing] = useState(false);
-  const [userInfo, setUserInfo] = useState({
-    name: 'Juan Pérez',
-    email: 'juan.perez@example.com',
-    company: 'TIC Americas',
-    profilePhoto: 'https://via.placeholder.com/150',
-    companyPhoto: 'https://via.placeholder.com/150',
-    description: 'Desarrollador Full Stack en TIC Americas.',
-    phone: '123-456-7890',
-    position: 'Desarrollador',
-    address: 'Calle Ficticia 123, Ciudad Ejemplo',
-    birthDate: '1990-01-01',
-    socialLinks: {
-      linkedin: 'https://www.linkedin.com/in/juanperez',
-      twitter: 'https://twitter.com/juanperez',
-      github: 'https://github.com/juanperez',
-    },
-    companyInfo: {
-      companyName: 'TIC Americas',
-      companyDescription: 'Empresa dedicada a la tecnología y desarrollo de software.',
-      companyLocation: 'Calle Ficticia 123, Ciudad Ejemplo',
-      companyPhone: '987-654-3210',
-      companyWebsite: 'https://ticamericas.com',
-    },
-    connectedUsers: [
-      { name: 'Carlos López', profilePhoto: 'https://via.placeholder.com/50' },
-      { name: 'Ana García', profilePhoto: 'https://via.placeholder.com/50' },
-      { name: 'Pedro Ruiz', profilePhoto: 'https://via.placeholder.com/50' },
-    ],
-  });
-
-  const handleEdit = () => {
-    setEditing(!editing);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUserInfo({ ...userInfo, [name]: value });
-  };
-
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    setUserInfo({ ...userInfo, [name]: URL.createObjectURL(files[0]) });
-  };
-
-  const handleSave = () => {
-    // Aquí iría la lógica para guardar los cambios, como una API o localStorage
-    alert('Cambios guardados exitosamente.');
-    setEditing(false);
-  };
+  const {
+    editing,
+    userInfo,
+    handleEdit,
+    handleChange,
+    handleFileChange,
+    handleSave,
+  } = useProfile();
 
   return (
     <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -165,7 +123,7 @@ const Profile = () => {
           <div className="mt-4">
             <label className="block text-sm text-gray-600">Enlaces de redes sociales</label>
             <div className="space-y-2 mt-2">
-              {['linkedin', 'twitter', 'github'].map((platform) => (
+              {Object.keys(userInfo.socialLinks).map((platform) => (
                 <div key={platform}>
                   {editing ? (
                     <input
@@ -223,7 +181,7 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm text-gray-600">Descripción</label>
+          <label className="block text-sm text-gray-600">Descripción de la empresa</label>
           {editing ? (
             <textarea
               name="companyInfo.companyDescription"
@@ -237,7 +195,7 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm text-gray-600">Ubicación</label>
+          <label className="block text-sm text-gray-600">Ubicación de la empresa</label>
           {editing ? (
             <input
               type="text"
@@ -252,7 +210,7 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm text-gray-600">Teléfono</label>
+          <label className="block text-sm text-gray-600">Teléfono de la empresa</label>
           {editing ? (
             <input
               type="text"
@@ -267,7 +225,7 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm text-gray-600">Sitio web</label>
+          <label className="block text-sm text-gray-600">Sitio web de la empresa</label>
           {editing ? (
             <input
               type="url"
@@ -281,40 +239,22 @@ const Profile = () => {
           )}
         </div>
 
-        {editing && (
-          <div className="mt-6 flex space-x-4">
-            <button
-              onClick={handleSave}
-              className="bg-blue-600 text-white py-2 px-4 rounded-md"
-            >
-              Hecho
-            </button>
-            <button
-              onClick={handleEdit}
-              className="bg-gray-300 text-gray-700 py-2 px-4 rounded-md"
-            >
-              Cancelar
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Parte de usuarios conectados */}
-      <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Usuarios Conectados</h3>
-        <div className="space-y-4">
-          {userInfo.connectedUsers.map((user, index) => (
-            <div key={index} className="flex items-center space-x-4">
-              <div className="w-10 h-10 rounded-full overflow-hidden">
-                <img
-                  src={user.profilePhoto}
-                  alt={user.name}
-                  className="w-full h-full object-cover"
-                />
+        <div className="mt-6">
+          <h4 className="text-lg font-semibold text-gray-800">Empleados conectados</h4>
+          <div className="space-y-4 mt-4">
+            {userInfo.connectedUsers.map((user) => (
+              <div key={user.name} className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full overflow-hidden">
+                  <img
+                    src={user.profilePhoto}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-gray-700">{user.name}</p>
               </div>
-              <p className="text-gray-800">{user.name}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
