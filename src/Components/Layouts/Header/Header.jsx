@@ -22,42 +22,42 @@ const Header = () => {
   if (location.pathname === '/programa') return null;
 
   return (
-    <header className="bg-red-600 text-white py-4 shadow-md">
-      <div className="container mx-auto flex justify-between items-center px-4">
+    <header className="bg-red-700 text-white py-4 shadow-xl">
+      <div className="container mx-auto flex justify-between items-center px-6">
         {/* Logo */}
-        <img src={logo} alt="Logo" className="h-20 w-20 rounded-full" />
+        <img src={logo} alt="Logo" className="h-16 w-16 rounded-full" />
         
         {/* Título */}
-        <h1 className="text-3xl font-bold text-[#f0f0f0] flex-grow text-center">
+        <h1 className="text-3xl font-bold text-white flex-grow text-center tracking-wide">
           TIC Americas
         </h1>
         
         {/* Navegación */}
-        <nav className="space-x-4 flex-grow flex justify-center">
+        <nav className="space-x-6 flex-grow flex justify-center">
           {location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/signup' && (
-            <Link to="/" className="text-xl font-bold text-[#f0f0f0] hover:underline">Inicio</Link>
+            <Link to="/" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Inicio</Link>
           )}
           {location.pathname !== '/lector-estatico' && location.pathname !== '/login' && location.pathname !== '/signup' && (
-            <Link to="/lector-estatico" className="text-xl font-bold text-[#f0f0f0] hover:underline">Lector Estático</Link>
+            <Link to="/lector-estatico" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Lector Estático</Link>
           )}
           {authenticated && location.pathname !== '/lector-dinamico' && (
-            <Link to="/lector-dinamico" className="text-xl font-bold text-[#f0f0f0] hover:underline">Lector Dinámico</Link>
+            <Link to="/lector-dinamico" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Lector Dinámico</Link>
           )}
           {authenticated && location.pathname !== '/productos' && (
-            <Link to="/productos" className="text-xl font-bold text-[#f0f0f0] hover:underline">Productos</Link>
+            <Link to="/productos" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Productos</Link>
           )}
           {authenticated && location.pathname !== '/profile' && (
-            <Link to="/profile" className="text-xl font-bold text-[#f0f0f0] hover:underline">Perfil</Link>
+            <Link to="/profile" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Perfil</Link>
           )}
           {authenticated && location.pathname !== '/ayuda' && (
-            <Link to="/ayuda" className="text-xl font-bold text-[#f0f0f0] hover:underline">Ayuda</Link>
+            <Link to="/ayuda" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Ayuda</Link>
           )}
         </nav>
         
         {/* Botón de Logout con imagen */}
         <button
           onClick={handleLogout}
-          className="flex items-center bg-red-800 px-4 py-2 rounded-lg hover:bg-red-700 font-bold text-xl"
+          className="flex items-center bg-red-800 px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 font-semibold text-xl"
         >
           <img
             src={exitImg}
