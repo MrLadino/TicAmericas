@@ -1,7 +1,4 @@
 // import React from 'react';
-// import perfil1 from "../../../assets/Perfil1.png";
-// import perfil2 from "../../../assets/Perfil2.png";
-// import perfil3 from "../../../assets/Perfil3.png";
 
 const Ayuda = () => {
   return (
@@ -11,7 +8,7 @@ const Ayuda = () => {
       <section className="mb-12">
         <h2 className="text-3xl font-semibold text-[#000000] mb-4">Bienvenido a TIC Americas</h2>
         <p className="text-lg text-[#000000]">
-          ¡Gracias por visitar TIC Americas! Este manual ha sido creado para guiarte a través de las diferentes funciones de nuestro sitio web, facilitando su uso. Aquí podrás encontrar instrucciones detalladas sobre cómo navegar por la plataforma, cómo crear, editar y eliminar productos, actualizar tu perfil, y muchas otras características esenciales para aprovechar al máximo nuestros servicios. Sigue leyendo y descubre todo lo que nuestro sitio tiene para ofrecerte.
+          ¡Gracias por visitar TIC Americas! Este manual ha sido creado para guiarte a través de las diferentes funciones de nuestro sitio web, facilitando su uso. Aquí podrás encontrar instrucciones detalladas sobre cómo navegar por la plataforma, cómo crear, editar y eliminar productos, configurar horarios de operación, y muchas otras características esenciales para aprovechar al máximo nuestros servicios. Sigue leyendo y descubre todo lo que nuestro sitio tiene para ofrecerte.
         </p>
       </section>
 
@@ -107,6 +104,22 @@ const Ayuda = () => {
           Para cerrar sesión, simplemente haz clic en el botón Cerrar sesión en la parte superior derecha de la página. Esto garantizará que tu cuenta quede protegida y nadie más pueda acceder a ella.
         </p>
       </section>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-semibold text-[#000000] mb-4">6. Iniciar Programa</h2>
+        <p className="text-lg text-[#000000]">
+          Esta sección te permitirá gestionar el funcionamiento principal del sistema, configurando horarios de operación o activando el modo de funcionamiento continuo.
+        </p>
+        <div className="mt-4">
+          <h3 className="text-xl font-semibold text-[#000000]">6.1 Establecer Horarios de Operación</h3>
+          <p className="text-lg text-[#000000]">Podrás configurar los días y horas en los que el sistema estará activo, permitiendo establecer un horario de funcionamiento más flexible para tu tienda.</p>
+        </div>
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold text-[#000000]">6.2 Modo de Funcionamiento Continuo</h3>
+          <p className="text-lg text-[#000000]">Puedes activar el modo 24/7, lo que mantendrá la plataforma en funcionamiento ininterrumpido, disponible para compras y transacciones sin restricciones de tiempo.</p>
+        </div>
+      </section>
+
     </div>
   );
 };

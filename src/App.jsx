@@ -1,15 +1,17 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from './Context/AuthContext'; // Asegúrate de que esta importación esté correcta
+import { useAuth } from './Context/AuthContext';
 import { AuthProvider } from './Context/AuthContext';
 import Header from './Components/Layouts/Header/Header';
 import Footer from './Components/Layouts/Footer/Footer';
-import Home from './Components/Pages/Home/Home';
+import Home from './Components/Pages/Home/Inicio';
 import Login from './Components/Pages/Login/Login';
 import IniciarPrograma from './Components/Pages/IniciarPrograma/IniciarPrograma';
 import Productos from './Components/Pages/Productos/Productos';
 import Profile from './Components/Pages/Profile/Profile';
 import SignUp from './Components/Pages/SignUp/SignUp';
 import Ayuda from './Components/Pages/Ayuda/Ayuda';
+import Programa from './Components/Pages/Programa/Programa';
+import Caja from './Components/Pages/Caja/Caja'; // Importa el nuevo componente Caja
 
 const App = () => {
   const { authenticated } = useAuth();
@@ -17,12 +19,9 @@ const App = () => {
 
   return (
     <AuthProvider>
-      {/* Contenedor principal con estilos flexbox */}
       <div className="flex flex-col min-h-screen">
-        {/* Header visible excepto en login y signup */}
-        {location.pathname !== '/login' && location.pathname !== '/signup' && <Header />}
+        {location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/programa' && <Header />}
 
-        {/* Contenido principal */}
         <main className="flex-grow">
           <Routes>
             <Route
@@ -31,26 +30,18 @@ const App = () => {
             />
             <Route path="/login" element={<Login />} />
             <Route path="/home" element={authenticated ? <Home /> : <Navigate to="/login" />} />
-            <Route
-              path="/iniciarPrograma"
-              element={authenticated ? <IniciarPrograma /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/productos"
-              element={authenticated ? <Productos /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/profile"
-              element={authenticated ? <Profile /> : <Navigate to="/login" />}
-            />
+            <Route path="/lector-estatico" element={authenticated ? <IniciarPrograma /> : <Navigate to="/login" />} />
+            <Route path="/lector-dinamico" element={authenticated ? <Caja /> : <Navigate to="/login" />} />
+            <Route path="/productos" element={authenticated ? <Productos /> : <Navigate to="/login" />} />
+            <Route path="/profile" element={authenticated ? <Profile /> : <Navigate to="/login" />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/ayuda" element={authenticated ? <Ayuda /> : <Navigate to="/login" />} />
+            <Route path="/programa" element={authenticated ? <Programa /> : <Navigate to="/login" />} />
             <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
         </main>
 
-        {/* Footer visible excepto en login y signup */}
-        {location.pathname !== '/login' && location.pathname !== '/signup' && <Footer />}
+        {location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/programa' && <Footer />}
       </div>
     </AuthProvider>
   );

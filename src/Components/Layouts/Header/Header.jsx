@@ -1,22 +1,25 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../../Context/AuthContext"; // Importa el hook
+import { useAuth } from "../../../Context/AuthContext";
 import logo from "../../../assets/Logo.png";
-import exitImg from "../../../assets/Exit.png"; // Importa la imagen para el logout
-import { useLocation } from 'react-router-dom'; // Importa useLocation para acceder a la ruta actual
+import exitImg from "../../../assets/Exit.png";
+import { useLocation } from 'react-router-dom';
 
 const Header = () => {
-  const { logout, authenticated } = useAuth(); // Usamos el hook aquí
+  const { logout, authenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // Usamos useLocation para obtener la ruta actual
+  const location = useLocation();
 
   const handleLogout = () => {
     if (authenticated) {
-      logout(); // Cambia el estado de autenticación
-      navigate("/login"); // Redirige a la página de login
+      logout();
+      navigate("/login");
     } else {
       console.error("El usuario no está autenticado.");
     }
   };
+
+  // Condición para no mostrar el Header en la ruta '/programa'
+  if (location.pathname === '/programa') return null;
 
   return (
     <header className="bg-red-600 text-white py-4 shadow-md">
@@ -31,27 +34,21 @@ const Header = () => {
         
         {/* Navegación */}
         <nav className="space-x-4 flex-grow flex justify-center">
-          {/* Solo mostrar "Inicio" si no estamos ya en esa ruta */}
           {location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/signup' && (
             <Link to="/" className="text-xl font-bold text-[#f0f0f0] hover:underline">Inicio</Link>
           )}
-
-          {/* Solo mostrar "Iniciar" si no estamos ya en esa ruta */}
-          {location.pathname !== '/iniciarPrograma' && location.pathname !== '/login' && location.pathname !== '/signup' && (
-            <Link to="/iniciarPrograma" className="text-xl font-bold text-[#f0f0f0] hover:underline">Iniciar</Link>
+          {location.pathname !== '/lector-estatico' && location.pathname !== '/login' && location.pathname !== '/signup' && (
+            <Link to="/lector-estatico" className="text-xl font-bold text-[#f0f0f0] hover:underline">Lector Estático</Link>
           )}
-
-          {/* Solo mostrar "Productos" si el usuario está autenticado */}
+          {authenticated && location.pathname !== '/lector-dinamico' && (
+            <Link to="/lector-dinamico" className="text-xl font-bold text-[#f0f0f0] hover:underline">Lector Dinámico</Link>
+          )}
           {authenticated && location.pathname !== '/productos' && (
             <Link to="/productos" className="text-xl font-bold text-[#f0f0f0] hover:underline">Productos</Link>
           )}
-          
-          {/* Solo mostrar "Perfil" si el usuario está autenticado */}
           {authenticated && location.pathname !== '/profile' && (
             <Link to="/profile" className="text-xl font-bold text-[#f0f0f0] hover:underline">Perfil</Link>
           )}
-
-          {/* Solo mostrar "Ayuda" si el usuario está autenticado */}
           {authenticated && location.pathname !== '/ayuda' && (
             <Link to="/ayuda" className="text-xl font-bold text-[#f0f0f0] hover:underline">Ayuda</Link>
           )}
