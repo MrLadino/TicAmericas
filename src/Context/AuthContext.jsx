@@ -1,19 +1,25 @@
-import React, { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState } from 'react';
 
-/**
- * Contexto de autenticación para gestionar el estado de autenticación en toda la aplicación.
- */
 const AuthContext = createContext();
 
-/**
- * Proveedor del contexto de autenticación.
- * @param {React.ReactNode} children - Componentes que estarán envueltos por el proveedor.
- */
-export const AuthProvider = ({ children }) => {
-  const [authenticated, setAuthenticated] = useState(false);
+export const useAuth = () => useContext(AuthContext);
 
-  const login = () => setAuthenticated(true);
-  const logout = () => setAuthenticated(false);
+export const AuthProvider = ({ children }) => {
+  const [authenticated, setAuthenticated] = useState(true);
+
+  const login = async (email, password) => {
+    // Simulación de autenticación (reemplazar por la lógica real)
+    if (email === 'usuario@dominio.com' && password === 'contraseña') {
+      setAuthenticated(true);
+      return true;
+    } else {
+      throw new Error('Credenciales incorrectas');
+    }
+  };
+
+  const logout = () => {
+    setAuthenticated(false);
+  };
 
   return (
     <AuthContext.Provider value={{ authenticated, login, logout }}>
@@ -21,9 +27,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-/**
- * Hook personalizado para acceder al contexto de autenticación.
- * @returns {Object} - Estado y funciones del contexto de autenticación.
- */
-export const useAuth = () => useContext(AuthContext);
