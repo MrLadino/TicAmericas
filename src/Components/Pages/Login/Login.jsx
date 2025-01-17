@@ -1,21 +1,35 @@
-import { useState } from 'react';
-import logo from '../../../assets/Logo.png'; // Importación del logo
+import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Para redirección
+import { useAuth } from "../../../Context/AuthContext"; // Uso del contexto de autenticación
+import logo from "../../../assets/Logo.png"; // Importación del logo
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(""); // Estado para errores
 
-  const handleSubmit = (e) => {
+  const { login } = useAuth(); // Uso de la función login del contexto
+  const navigate = useNavigate(); // Hook para redirigir después de iniciar sesión
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(""); // Limpiar errores previos
 
-    // Simulación de inicio de sesión
-    setTimeout(() => {
-      console.log('Intento de inicio de sesión:', { email, password, rememberMe });
+    try {
+      await login(email, password); // Llama a la función de login del AuthContext
+      if (rememberMe) {
+        // Guardar usuario en localStorage si el usuario desea "recordarme"
+        localStorage.setItem("email", email);
+      }
+      navigate("/home"); // Redirigir a la página de inicio
+    } catch (err) {
+      setError(err.message); // Mostrar mensaje de error si la autenticación falla
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -30,14 +44,21 @@ const Login = () => {
           />
         </div>
         {/* Título */}
-        <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">Bienvenido</h2>
+        <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">
+          Bienvenido
+        </h2>
         <p className="text-center text-gray-500 mb-6">
           Ingresa tus credenciales para continuar.
         </p>
         <form onSubmit={handleSubmit}>
           {/* Campo de correo */}
           <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700">Correo electrónico</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-gray-700"
+            >
+              Correo electrónico
+            </label>
             <input
               type="email"
               id="email"
@@ -51,7 +72,12 @@ const Login = () => {
           </div>
           {/* Campo de contraseña */}
           <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">Contraseña</label>
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold text-gray-700"
+            >
+              Contraseña
+            </label>
             <input
               type="password"
               id="password"
@@ -63,6 +89,12 @@ const Login = () => {
               required
             />
           </div>
+          {/* Mostrar errores */}
+          {error && (
+            <div className="mb-4 text-sm text-red-600">
+              {error}
+            </div>
+          )}
           {/* Recordarme */}
           <div className="flex items-center justify-between mb-6">
             <label className="flex items-center text-sm text-gray-600">
@@ -74,26 +106,33 @@ const Login = () => {
               />
               <span className="ml-2">Recuérdame</span>
             </label>
-            <a href="#recuperar" className="text-sm text-red-500 hover:underline">¿Olvidaste tu contraseña?</a>
+            <a
+              href="#recuperar"
+              className="text-sm text-red-500 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </a>
           </div>
           {/* Botón de inicio */}
           <button
             type="submit"
             className={`w-full py-3 rounded-lg text-white font-semibold transition ${
               isLoading
-                ? 'bg-red-400 cursor-not-allowed'
-                : 'bg-red-500 hover:bg-red-600'
+                ? "bg-red-400 cursor-not-allowed"
+                : "bg-red-500 hover:bg-red-600"
             }`}
             disabled={isLoading}
           >
-            {isLoading ? 'Cargando...' : 'Iniciar sesión'}
+            {isLoading ? "Cargando..." : "Iniciar sesión"}
           </button>
         </form>
         {/* Registro */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            ¿No tienes una cuenta?{' '}
-            <a href="/signup" className="text-red-500 hover:underline">Regístrate</a>
+            ¿No tienes una cuenta?{" "}
+            <a href="/signup" className="text-red-500 hover:underline">
+              Regístrate
+            </a>
           </p>
         </div>
       </div>
