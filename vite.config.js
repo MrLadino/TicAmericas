@@ -1,15 +1,12 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+// vite.config.js
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// export default defineConfig({
-//   plugins: [react()],
-//   base: '/TicAmericas/', // Nombre exacto del repositorio sin acentos
-// });
-
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/TicAmericas/',  // Nombre del repositorio
+  base: "/TicAmericas/",  // Esto es para GitHub Pages
   build: {
-    outDir: 'build',  // Asegúrate de que se genere en la carpeta 'build'
+    outDir: "dist",
   },
 });
