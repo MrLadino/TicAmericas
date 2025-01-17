@@ -8,22 +8,17 @@ export const useAuth = () => useContext(AuthContext);
 
 // Proveedor de autenticación
 export const AuthProvider = ({ children }) => {
-  const [authenticated, setAuthenticated] = useState(false); // Empezamos como no autenticado
+  const [authenticated, setAuthenticated] = useState(true); // Comienza como autenticado para saltar la validación
 
-  // Función para iniciar sesión (simulada, reemplazar con lógica real)
+  // Función para iniciar sesión (sin validación)
   const login = async (email, password) => {
-    // Validación de las credenciales (puedes reemplazar esta lógica con una API real)
-    if (email === 'usuario@dominio.com' && password === 'contraseña') {
-      setAuthenticated(true); // Cambiamos el estado a autenticado
-      return true; // Devuelve true si las credenciales son correctas
-    } else {
-      throw new Error('Credenciales incorrectas'); // Error si las credenciales no coinciden
-    }
+    setAuthenticated(true); // Marcar siempre como autenticado
+    return true; // Siempre devuelve true para saltarse la validación
   };
 
   // Función para cerrar sesión
   const logout = () => {
-    setAuthenticated(false); // Cambiamos el estado a no autenticado
+    setAuthenticated(false); // Cambiar a no autenticado
   };
 
   return (
