@@ -7,6 +7,6 @@ export default defineConfig({
   plugins: [react()],
   base: "/TicAmericas/",  // Esto es para GitHub Pages
   build: {
-    outDir: "dist",
+    outDir: "dist", // Salida de los archivos de build
   },
 });
