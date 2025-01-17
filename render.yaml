@@ -1,7 +1,0 @@
-services:
-  - type: static_site
-    name: TicAmericas
-    repo: https://github.com/MrLadino/TicAmericas.git
-    branch: main
-    buildCommand: npm install && npm run build
-    publishDirectory: build
