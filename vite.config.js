@@ -1,11 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: "/TicAmericas/",  // Esto es para GitHub Pages
+  base: mode === "development" ? "/" : "/TicAmericas/", // Base dinámica para desarrollo y producción
   build: {
-    outDir: "dist", // Salida de los archivos de build
+    outDir: "dist", // Directorio de salida
   },
-});
+}));
