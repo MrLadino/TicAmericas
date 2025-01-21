@@ -1,19 +1,28 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState } from "react";
+import validateEmail from "../Services/emailValidation";
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [authenticated, setAuthenticated] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
 
   const login = async (email, password) => {
-    // Simulación de autenticación (reemplazar por la lógica real)
-    if (email === 'usuario@dominio.com' && password === 'contraseña') {
-      setAuthenticated(true);
-      return true;
-    } else {
-      throw new Error('Credenciales incorrectas');
+    try {
+      const { valid, message } = await validateEmail(email);
+      if (!valid) {
+        throw new Error(`Correo inválido: ${message}`);
+      }
+
+      if (email === "andresladino0324@gmail.com" && password === "an02133012") {
+        setAuthenticated(true);
+        return true;
+      } else {
+        throw new Error("Credenciales incorrectas");
+      }
+    } catch (error) {
+      throw new Error(error.message || "Error al iniciar sesión");
     }
   };
 
