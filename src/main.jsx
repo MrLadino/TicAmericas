@@ -8,7 +8,7 @@ import App from "./App.jsx"; // Componente principal de tu app
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <BrowserRouter basename="/TicAmericas">
+      <BrowserRouter>
         <App />
       </BrowserRouter>
     </AuthProvider>

@@ -1,10 +1,11 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   plugins: [react()],
-  base: mode === "development" ? "/" : "/TicAmericas/", // Base dinámica para desarrollo y producción
+  base: '',  // Si no estás usando basename
   build: {
-    outDir: "dist", // Directorio de salida
+    outDir: 'dist',
   },
-}));
+});

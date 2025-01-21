@@ -1,21 +1,36 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../Context/AuthContext'; // Importa el hook de autenticación
 import logo from '../../../assets/Logo.png'; // Importación del logo
+import { Link } from 'react-router-dom'; // Importa Link
 
 const Login = () => {
+  const { login } = useAuth(); // Usar el método de login del contexto
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate(); // Hook para redirigir
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulación de inicio de sesión
-    setTimeout(() => {
-      console.log('Intento de inicio de sesión:', { email, password, rememberMe });
+    try {
+      // Intentamos iniciar sesión
+      const success = await login(email, password);
+      if (success) {
+        navigate('/home'); // Redirige al usuario a la página de inicio
+      } else {
+        // Puedes agregar una validación para mostrar un error si el login falla
+        alert("Credenciales incorrectas");
+      }
+    } catch (error) {
+      console.error('Error al iniciar sesión', error);
+      alert("Hubo un problema al iniciar sesión");
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -79,11 +94,7 @@ const Login = () => {
           {/* Botón de inicio */}
           <button
             type="submit"
-            className={`w-full py-3 rounded-lg text-white font-semibold transition ${
-              isLoading
-                ? 'bg-red-400 cursor-not-allowed'
-                : 'bg-red-500 hover:bg-red-600'
-            }`}
+            className={`w-full py-3 rounded-lg text-white font-semibold transition ${isLoading ? 'bg-red-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}`}
             disabled={isLoading}
           >
             {isLoading ? 'Cargando...' : 'Iniciar sesión'}
@@ -93,7 +104,7 @@ const Login = () => {
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
             ¿No tienes una cuenta?{' '}
-            <a href="/signup" className="text-red-500 hover:underline">Regístrate</a>
+            <Link to="/signup" className="text-red-500 hover:underline">Regístrate</Link>
           </p>
         </div>
       </div>
