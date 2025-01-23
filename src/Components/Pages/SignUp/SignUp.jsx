@@ -12,7 +12,7 @@ const SignUp = () => {
     setIsLoading(true);
 
     // Simulación de registro
-    setTimeout(() => {
+    setTimeout(() => {  
       console.log('Registro exitoso:', { email, password });
       setIsLoading(false);
     }, 2000);

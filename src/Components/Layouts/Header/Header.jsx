@@ -2,12 +2,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../Context/AuthContext";
 import logo from "../../../assets/Logo.png";
 import exitImg from "../../../assets/Exit.png";
-import { useLocation } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
+import { useState } from "react";
 
 const Header = () => {
   const { logout, authenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
     if (authenticated) {
@@ -19,52 +21,118 @@ const Header = () => {
   };
 
   // Condición para no mostrar el Header en la ruta '/programa'
-  if (location.pathname === '/programa') return null;
+  if (location.pathname === "/programa") return null;
 
   return (
-    <header className="bg-red-700 text-white py-4 shadow-xl">
-      <div className="container mx-auto flex justify-between items-center px-6">
-        {/* Logo */}
-        <img src={logo} alt="Logo" className="h-16 w-16 rounded-full" />
-        
-        {/* Título */}
-        <h1 className="text-3xl font-bold text-white flex-grow text-center tracking-wide">
-          TIC Americas
-        </h1>
-        
-        {/* Navegación */}
-        <nav className="space-x-6 flex-grow flex justify-center">
-          {location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/signup' && (
-            <Link to="/" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Inicio</Link>
-          )}
-          {location.pathname !== '/lector-estatico' && location.pathname !== '/login' && location.pathname !== '/signup' && (
-            <Link to="/lector-estatico" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Lector Estático</Link>
-          )}
-          {authenticated && location.pathname !== '/lector-dinamico' && (
-            <Link to="/lector-dinamico" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Lector Dinámico</Link>
-          )}
-          {authenticated && location.pathname !== '/productos' && (
-            <Link to="/productos" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Productos</Link>
-          )}
-          {authenticated && location.pathname !== '/profile' && (
-            <Link to="/profile" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Perfil</Link>
-          )}
-          {authenticated && location.pathname !== '/ayuda' && (
-            <Link to="/ayuda" className="text-xl font-semibold text-white hover:text-black hover:underline transition duration-300">Ayuda</Link>
+    <header className="bg-red-700 text-white py-3 shadow-xl">
+      <div className="container mx-auto px-4">
+        {/* Encabezado con diseño responsivo */}
+        <div className="flex items-center justify-between sm:flex-col sm:items-center sm:space-y-2 sm:mb-4">
+          {/* Logo en la esquina superior izquierda para <640px */}
+          <img
+            src={logo}
+            alt="Logo"
+            className="h-12 w-12 rounded-full sm:h-16 sm:w-16"
+          />
+
+          {/* Título centrado para pantallas más grandes */}
+          <h1 className="text-lg sm:text-3xl md:text-4xl font-bold text-white tracking-wide text-center sm:mb-2">
+            TIC Americas
+          </h1>
+
+          {/* Botón de menú hamburguesa para pantallas pequeñas */}
+          <div className="sm:hidden">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="bg-red-800 p-2 rounded-lg hover:bg-red-600 transition duration-300"
+            >
+              <span className="block w-6 h-0.5 bg-white mb-1"></span>
+              <span className="block w-6 h-0.5 bg-white mb-1"></span>
+              <span className="block w-6 h-0.5 bg-white"></span>
+            </button>
+          </div>
+        </div>
+
+        {/* Menú de navegación */}
+        <nav
+          className={`${
+            isMenuOpen ? "block" : "hidden"
+          } sm:block sm:mt-4`}
+        >
+          <ul className="flex flex-col sm:flex-row sm:justify-center sm:space-x-8 mt-4 sm:mt-0">
+            <li>
+              <Link
+                to="/"
+                className="font-semibold text-base md:text-lg lg:text-xl xl:text-3xl hover:text-black hover:underline transition duration-300"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Inicio
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/lector-estatico"
+                className="font-semibold text-base md:text-lg lg:text-xl xl:text-3xl hover:text-black hover:underline transition duration-300"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Lector Estático
+              </Link>
+            </li>
+            {authenticated && (
+              <>
+                <li>
+                  <Link
+                    to="/lector-dinamico"
+                    className="font-semibold text-base md:text-lg lg:text-xl xl:text-3xl hover:text-black hover:underline transition duration-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Lector Dinámico
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/productos"
+                    className="font-semibold text-base md:text-lg lg:text-xl xl:text-3xl hover:text-black hover:underline transition duration-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Productos
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/profile"
+                    className="font-semibold text-base md:text-lg lg:text-xl xl:text-3xl hover:text-black hover:underline transition duration-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Perfil
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/ayuda"
+                    className="font-semibold text-base md:text-lg lg:text-xl xl:text-3xl hover:text-black hover:underline transition duration-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Ayuda
+                  </Link>
+                </li>
+              </>
+            )}
+          </ul>
+
+          {/* Botón de logout */}
+          {authenticated && (
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleLogout}
+                className="flex items-center bg-red-800 px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 font-semibold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl"
+              >
+                <img src={exitImg} alt="Salir" className="h-6 w-6 mr-2" />
+                <span>Salir</span>
+              </button>
+            </div>
           )}
         </nav>
-        
-        {/* Botón de Logout con imagen */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center bg-red-800 px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 font-semibold text-xl"
-        >
-          <img
-            src={exitImg}
-            alt="Salir"
-            className="h-8 w-8 mr-2"
-          />
-        </button>
       </div>
     </header>
   );
