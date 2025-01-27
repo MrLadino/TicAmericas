@@ -7,7 +7,7 @@ export const useProfile = () => {
     email: "juan.perez@example.com",
     company: "TIC Americas",
     profilePhoto: "https://via.placeholder.com/150",
-    companyPhoto: "https://via.placeholder.com/150",
+    companyPhoto: "https://via.placeholder.com/500x200",
     description: "Desarrollador Full Stack en TIC Americas.",
     phone: "123-456-7890",
     position: "Desarrollador",
@@ -25,11 +25,6 @@ export const useProfile = () => {
       companyPhone: "987-654-3210",
       companyWebsite: "https://ticamericas.com",
     },
-    connectedUsers: [
-      { name: "Carlos López", profilePhoto: "https://via.placeholder.com/50" },
-      { name: "Ana García", profilePhoto: "https://via.placeholder.com/50" },
-      { name: "Pedro Ruiz", profilePhoto: "https://via.placeholder.com/50" },
-    ],
   });
 
   const handleEdit = () => setEditing(!editing);
@@ -56,6 +51,16 @@ export const useProfile = () => {
     }));
   };
 
+  const handleCompanyPhotoToggle = () => {
+    setUserInfo((prevInfo) => ({
+      ...prevInfo,
+      companyPhoto:
+        prevInfo.companyPhoto === "https://via.placeholder.com/500x200"
+          ? "https://via.placeholder.com/150"
+          : "https://via.placeholder.com/500x200",
+    }));
+  };
+
   const handleSave = () => {
     alert("Cambios guardados exitosamente.");
     setEditing(false);
@@ -68,5 +73,6 @@ export const useProfile = () => {
     handleChange,
     handleFileChange,
     handleSave,
+    handleCompanyPhotoToggle,
   };
 };

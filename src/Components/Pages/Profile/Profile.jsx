@@ -11,41 +11,60 @@ const Profile = () => {
   } = useProfile();
 
   return (
-    <div className="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-      {/* Perfil del usuario (izquierda) */}
-      <div className="col-span-2 bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Mi Perfil</h2>
-        <div className="flex items-center space-x-6">
-          <div className="w-40 h-40 rounded-full overflow-hidden">
-            <img
-              src={userInfo.profilePhoto}
-              alt="Foto de perfil"
-              className="w-full h-full object-cover"
-            />
+    <div className="container mx-auto p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Perfil de usuario a la izquierda */}
+        <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out">
+          <h2 className="text-4xl font-bold text-red-600 mb-6">Mi Perfil</h2>
+          
+          {/* Foto de perfil */}
+          <div className="flex items-center space-x-6">
+            <div className="w-40 h-40 rounded-full overflow-hidden shadow-xl">
+              <img
+                src={userInfo.profilePhoto}
+                alt="Foto de perfil"
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
-          <div>
-            {editing ? (
+          {editing && (
+            <div className="mt-4 text-center">
+              <label
+                htmlFor="profile-photo-upload"
+                className="cursor-pointer bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+              >
+                Imagen
+              </label>
               <input
                 type="file"
+                id="profile-photo-upload"
                 name="profilePhoto"
                 onChange={handleFileChange}
-                className="border border-gray-300 p-2 mb-4"
+                className="hidden"
               />
-            ) : (
-              <button
-                onClick={handleEdit}
-                className="text-black hover:underline mb-4"
-              >
-                Editar perfil
-              </button>
-            )}
-            <h3 className="text-xl font-semibold text-gray-800">{userInfo.name}</h3>
-            <p className="text-gray-600">{userInfo.email}</p>
-          </div>
-        </div>
+            </div>
+          )}
 
-        <div className="mt-6">
-          <h4 className="text-lg font-semibold text-gray-800">Información adicional</h4>
+          {/* Información del usuario */}
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold text-gray-800">Nombre del usuario</h4>
+            <div className="mt-4">
+              {editing ? (
+                <input
+                  type="text"
+                  name="name"
+                  value={userInfo.name}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                />
+              ) : (
+                <p className="text-gray-700">{userInfo.name}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Información adicional del usuario */}
+          <h4 className="text-lg font-semibold text-gray-800 mt-6">Información adicional</h4>
           <div className="mt-4">
             <label className="block text-sm text-gray-600">Descripción</label>
             {editing ? (
@@ -53,13 +72,14 @@ const Profile = () => {
                 name="description"
                 value={userInfo.description}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2"
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
               />
             ) : (
               <p className="text-gray-700">{userInfo.description}</p>
             )}
           </div>
 
+          {/* Información de contacto del usuario */}
           <div className="mt-4">
             <label className="block text-sm text-gray-600">Teléfono</label>
             {editing ? (
@@ -68,194 +88,126 @@ const Profile = () => {
                 name="phone"
                 value={userInfo.phone}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2"
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
               />
             ) : (
               <p className="text-gray-700">{userInfo.phone}</p>
             )}
           </div>
+        </div>
 
-          <div className="mt-4">
-            <label className="block text-sm text-gray-600">Posición</label>
-            {editing ? (
-              <input
-                type="text"
-                name="position"
-                value={userInfo.position}
-                onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2"
-              />
-            ) : (
-              <p className="text-gray-700">{userInfo.position}</p>
-            )}
+        {/* Perfil de la empresa debajo del perfil del usuario */}
+        <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out">
+          <h2 className="text-4xl font-bold text-red-600 mb-6">Información de la Empresa</h2>
+
+          {/* Nombre de la empresa */}
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold">Nombre de la empresa</h4>
+            <div className="mt-4">
+              {editing ? (
+                <input
+                  type="text"
+                  name="companyInfo.companyName"
+                  value={userInfo.companyInfo.companyName}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                />
+              ) : (
+                <p className="text-gray-200">{userInfo.companyInfo.companyName}</p>
+              )}
+            </div>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm text-gray-600">Dirección</label>
-            {editing ? (
-              <input
-                type="text"
-                name="address"
-                value={userInfo.address}
-                onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2"
-              />
-            ) : (
-              <p className="text-gray-700">{userInfo.address}</p>
-            )}
-          </div>
-
-          <div className="mt-4">
-            <label className="block text-sm text-gray-600">Fecha de nacimiento</label>
-            {editing ? (
-              <input
-                type="date"
-                name="birthDate"
-                value={userInfo.birthDate}
-                onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2"
-              />
-            ) : (
-              <p className="text-gray-700">{userInfo.birthDate}</p>
-            )}
-          </div>
-
-          <div className="mt-4">
-            <label className="block text-sm text-gray-600">Enlaces de redes sociales</label>
-            <div className="space-y-2 mt-2">
-              {Object.keys(userInfo.socialLinks).map((platform) => (
-                <div key={platform}>
-                  {editing ? (
-                    <input
-                      type="url"
-                      name={`socialLinks.${platform}`}
-                      value={userInfo.socialLinks[platform]}
-                      onChange={handleChange}
-                      placeholder={`Enlace a ${platform.charAt(0).toUpperCase() + platform.slice(1)}`}
-                      className="w-full border border-gray-300 p-2"
-                    />
-                  ) : (
-                    <p className="text-gray-700">{userInfo.socialLinks[platform]}</p>
-                  )}
+          {/* Foto de la empresa */}
+          <div className="mt-6">
+            <label className="block text-sm text-gray-300">Foto de la Empresa</label>
+            <div className="flex items-center space-x-6">
+              <div className="w-full h-40 rounded-md overflow-hidden shadow-xl">
+                <img
+                  src={userInfo.companyPhoto}
+                  alt="Foto de la empresa"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {editing && (
+                <div className="mt-4 text-center">
+                  <label
+                    htmlFor="company-photo-upload"
+                    className="cursor-pointer bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+                  >
+                    Imagen
+                  </label>
+                  <input
+                    type="file"
+                    id="company-photo-upload"
+                    name="companyPhoto"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {editing && (
-            <div className="mt-6 flex space-x-4">
-              <button
-                onClick={handleSave}
-                className="bg-blue-600 text-white py-2 px-4 rounded-md"
-              >
-                Hecho
-              </button>
-              <button
-                onClick={handleEdit}
-                className="bg-gray-300 text-gray-700 py-2 px-4 rounded-md"
-              >
-                Cancelar
-              </button>
+          {/* Descripción de la empresa */}
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold">Descripción de la empresa</h4>
+            <div className="mt-4">
+              {editing ? (
+                <textarea
+                  name="companyInfo.companyDescription"
+                  value={userInfo.companyInfo.companyDescription}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                />
+              ) : (
+                <p className="text-gray-200">{userInfo.companyInfo.companyDescription}</p>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Ubicación de la empresa */}
+          <div className="mt-4">
+            <label className="block text-sm text-gray-300">Ubicación de la empresa</label>
+            {editing ? (
+              <input
+                type="text"
+                name="companyInfo.companyLocation"
+                value={userInfo.companyInfo.companyLocation}
+                onChange={handleChange}
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+              />
+            ) : (
+              <p className="text-gray-200">{userInfo.companyInfo.companyLocation}</p>
+            )}
+          </div>
+
+          {/* Teléfono de la empresa */}
+          <div className="mt-4">
+            <label className="block text-sm text-gray-300">Teléfono de la empresa</label>
+            {editing ? (
+              <input
+                type="text"
+                name="companyInfo.companyPhone"
+                value={userInfo.companyInfo.companyPhone}
+                onChange={handleChange}
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+              />
+            ) : (
+              <p className="text-gray-200">{userInfo.companyInfo.companyPhone}</p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Información de la empresa (derecha) */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Información de la Empresa</h3>
-
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">Nombre de la empresa</label>
-          {editing ? (
-            <input
-              type="text"
-              name="companyInfo.companyName"
-              value={userInfo.companyInfo.companyName}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-2 mt-2"
-            />
-          ) : (
-            <p className="text-gray-700">{userInfo.companyInfo.companyName}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">Descripción de la empresa</label>
-          {editing ? (
-            <textarea
-              name="companyInfo.companyDescription"
-              value={userInfo.companyInfo.companyDescription}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-2 mt-2"
-            />
-          ) : (
-            <p className="text-gray-700">{userInfo.companyInfo.companyDescription}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">Ubicación de la empresa</label>
-          {editing ? (
-            <input
-              type="text"
-              name="companyInfo.companyLocation"
-              value={userInfo.companyInfo.companyLocation}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-2 mt-2"
-            />
-          ) : (
-            <p className="text-gray-700">{userInfo.companyInfo.companyLocation}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">Teléfono de la empresa</label>
-          {editing ? (
-            <input
-              type="text"
-              name="companyInfo.companyPhone"
-              value={userInfo.companyInfo.companyPhone}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-2 mt-2"
-            />
-          ) : (
-            <p className="text-gray-700">{userInfo.companyInfo.companyPhone}</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm text-gray-600">Sitio web de la empresa</label>
-          {editing ? (
-            <input
-              type="url"
-              name="companyInfo.companyWebsite"
-              value={userInfo.companyInfo.companyWebsite}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-2 mt-2"
-            />
-          ) : (
-            <p className="text-gray-700">{userInfo.companyInfo.companyWebsite}</p>
-          )}
-        </div>
-
-        <div className="mt-6">
-          <h4 className="text-lg font-semibold text-gray-800">Empleados conectados</h4>
-          <div className="space-y-4 mt-4">
-            {userInfo.connectedUsers.map((user) => (
-              <div key={user.name} className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden">
-                  <img
-                    src={user.profilePhoto}
-                    alt={user.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <p className="text-gray-700">{user.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Botón de Editar/Hecho debajo de la información de la empresa */}
+      <div className="w-full mt-8">
+        <button
+          onClick={editing ? handleSave : handleEdit}
+          className="bg-red-600 text-white py-2 px-4 rounded-md w-full hover:bg-red-700"
+        >
+          {editing ? "Hecho" : "Editar perfil"}
+        </button>
       </div>
     </div>
   );

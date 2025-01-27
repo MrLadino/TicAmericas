@@ -9,6 +9,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState(""); // Estado para el rol seleccionado
+  const [adminPassword, setAdminPassword] = useState(""); // Estado para la contraseña de admin
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -86,6 +88,48 @@ const Login = () => {
               required
             />
           </div>
+          {/* Menú desplegable para seleccionar el rol */}
+          <div className="mb-4">
+            <label
+              htmlFor="role"
+              className="block text-sm font-semibold text-gray-700"
+            >
+              Rol
+            </label>
+            <select
+              id="role"
+              name="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              required
+            >
+              <option value="">Selecciona un rol</option>
+              <option value="admin">Admin</option>
+              <option value="usuario">Usuario</option>
+            </select>
+          </div>
+          {/* Campo de contraseña de admin (solo si se selecciona admin) */}
+          {role === "admin" && (
+            <div className="mb-4">
+              <label
+                htmlFor="adminPassword"
+                className="block text-sm font-semibold text-gray-700"
+              >
+                Contraseña de Admin
+              </label>
+              <input
+                type="password"
+                id="adminPassword"
+                name="adminPassword"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Ingresa la contraseña de admin"
+                required={role === "admin"}
+              />
+            </div>
+          )}
           {/* Checkbox de recordar */}
           <div className="flex items-center justify-between mb-6">
             <label className="flex items-center text-sm text-gray-600">

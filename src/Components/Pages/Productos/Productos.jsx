@@ -107,12 +107,12 @@ const Productos = () => {
         }
     };
 
-    const realizarBusqueda = () => {};
-
     return (
         <div className="container mx-auto p-8">
-            <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-gray-300">
-                <div className="flex space-x-6 items-center">
+        {/* Categoría */}
+        <div className="mb-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-600">
+            <div className="flex flex-col items-center space-y-4">
+                <div className="flex space-x-6 items-center w-full justify-center">
                     <select
                         value={categoriaSeleccionada}
                         onChange={(e) => setCategoriaSeleccionada(e.target.value)}
@@ -124,169 +124,176 @@ const Productos = () => {
                             </option>
                         ))}
                     </select>
+                </div>
+                <div className="flex justify-center space-x-4 mb-4">
                     <button
                         onClick={() => abrirModalCategoria('agregar')}
-                        className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                        className="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 text-sm w-full max-w-xs"
                     >
                         Agregar categoría
                     </button>
                     <button
                         onClick={() => abrirModalCategoria('editar', categoriaSeleccionada)}
-                        className="bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700"
+                        className="bg-black text-white py-2 px-6 rounded-lg hover:bg-gray-800 text-sm w-full max-w-xs"
                     >
                         Editar categoría
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-gray-300">
-                <div className="relative w-80">
-                    <input
-                        type="text"
-                        value={busqueda}
-                        onChange={manejarBusqueda}
-                        placeholder="Buscar producto"
-                        className="p-3 border rounded-lg w-full text-gray-700"
-                    />
-                    <button
-                        onClick={realizarBusqueda}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
-                    >
-                        <i className="fas fa-search"></i>
-                    </button>
-                </div>
+        {/* Barra de búsqueda y botón de agregar producto */}
+        <div className="flex flex-col items-center justify-between mb-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-600">
+            {/* Barra de búsqueda */}
+            <div className="relative w-full md:w-3/4 lg:w-1/2 mb-4">
+                <input
+                    type="text"
+                    value={busqueda}
+                    onChange={manejarBusqueda}
+                    placeholder="Buscar producto"
+                    className="p-3 border rounded-lg w-full text-gray-700"
+                />
+            </div>
+
+            {/* Botón de agregar producto */}
+            <div className="flex justify-center mb-4">
                 <button
                     onClick={() => abrirModalProducto('agregar')}
-                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                    className="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 text-sm w-full max-w-xs"
                 >
                     Agregar producto
                 </button>
             </div>
+        </div>
 
-            <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-md">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="border border-gray-300 px-4 py-3 text-left">ID</th>
-                            <th className="border border-gray-300 px-4 py-3 text-left">Imagen</th>
-                            <th className="border border-gray-300 px-4 py-3 text-left">Nombre</th>
-                            <th className="border border-gray-300 px-4 py-3 text-left">Descripción</th>
-                            <th className="border border-gray-300 px-4 py-3 text-left">Precio</th>
-                            <th className="border border-gray-300 px-4 py-3 text-left">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {productosCoincidentes.map((producto) => (
-                            <tr key={producto.id} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 px-4 py-3">{producto.id}</td>
-                                <td className="border border-gray-300 px-4 py-3">
-                                    <img src={producto.imagen} alt={producto.nombre} className="w-12 h-12 object-cover rounded-md" />
-                                </td>
-                                <td className="border border-gray-300 px-4 py-3">{producto.nombre}</td>
-                                <td className="border border-gray-300 px-4 py-3">{producto.descripcion}</td>
-                                <td className="border border-gray-300 px-4 py-3">${producto.precio.toFixed(2)}</td>
-                                <td className="border border-gray-300 px-4 py-3">
+        {/* Tabla de productos */}
+        <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-md">
+                <thead className="bg-gray-100">
+                    <tr>
+                        <th className="border border-gray-300 px-4 py-3 text-left">ID</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left">Imagen</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left">Nombre</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left">Descripción</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left">Precio</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {productosCoincidentes.map((producto) => (
+                        <tr key={producto.id} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-3">{producto.id}</td>
+                            <td className="border border-gray-300 px-4 py-3">
+                                <img src={producto.imagen} alt={producto.nombre} className="w-12 h-12 object-cover rounded-md" />
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3">{producto.nombre}</td>
+                            <td className="border border-gray-300 px-4 py-3">{producto.descripcion}</td>
+                            <td className="border border-gray-300 px-4 py-3">${producto.precio.toFixed(2)}</td>
+                            <td className="border border-gray-300 px-4 py-3 text-center">
+                                <div className="flex justify-center space-x-2">
                                     <button
                                         onClick={() => abrirModalProducto('editar', producto)}
-                                        className="bg-indigo-600 text-white py-1 px-4 rounded-md hover:bg-indigo-700"
+                                        className="bg-black text-white py-1 px-4 rounded-md hover:bg-gray-800 text-xs"
                                     >
                                         Editar
                                     </button>
                                     <button
                                         onClick={() => eliminarProductoSeleccionado(producto.id)}
-                                        className="bg-red-600 text-white py-1 px-4 rounded-md hover:bg-red-700 ml-2"
+                                        className="bg-red-600 text-white py-1 px-4 rounded-md hover:bg-red-700 text-xs"
                                     >
                                         Eliminar
                                     </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
 
-            {mostrarModalEditar && (
-                <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-                        <h3 className="text-2xl font-semibold mb-4">{tipoEdicion === 'agregar' ? 'Agregar' : 'Editar'} {productoEditar ? 'Producto' : 'Categoría'}</h3>
-                        {productoEditar ? (
-                            <>
-                                <input
-                                    type="text"
-                                    value={productoEditar.nombre}
-                                    onChange={(e) => setProductoEditar({ ...productoEditar, nombre: e.target.value })}
-                                    placeholder="Nombre"
-                                    className="p-3 border mb-4 w-full"
-                                />
-                                <input
-                                    type="text"
-                                    value={productoEditar.descripcion}
-                                    onChange={(e) => setProductoEditar({ ...productoEditar, descripcion: e.target.value })}
-                                    placeholder="Descripción"
-                                    className="p-3 border mb-4 w-full"
-                                />
-                                <input
-                                    type="number"
-                                    value={productoEditar.precio}
-                                    onChange={(e) => setProductoEditar({ ...productoEditar, precio: parseFloat(e.target.value) })}
-                                    placeholder="Precio"
-                                    className="p-3 border mb-4 w-full"
-                                />
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
-                                                setProductoEditar({ ...productoEditar, imagen: reader.result });
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
-                                    }}
-                                    className="p-3 border mb-4 w-full"
-                                />
-                                {productoEditar.imagen && (
-                                    <img src={productoEditar.imagen} alt="Vista previa" className="w-32 h-32 object-cover mt-4" />
-                                )}
-                            </>
-                        ) : (
+        {/* Modal de edición */}
+        {mostrarModalEditar && (
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+                    <h3 className="text-2xl font-semibold mb-4">
+                        {tipoEdicion === 'agregar' ? 'Agregar' : 'Editar'} {productoEditar ? 'Producto' : 'Categoría'}
+                    </h3>
+                    {productoEditar ? (
+                        <>
                             <input
                                 type="text"
-                                value={categoriaEditar}
-                                onChange={(e) => setCategoriaEditar(e.target.value)}
-                                placeholder="Nombre de la categoría"
+                                value={productoEditar.nombre}
+                                onChange={(e) => setProductoEditar({ ...productoEditar, nombre: e.target.value })}
+                                placeholder="Nombre"
                                 className="p-3 border mb-4 w-full"
                             />
-                        )}
-                        <div className="flex justify-end space-x-4">
-                            <button
-                                onClick={() => setMostrarModalEditar(false)}
-                                className="bg-gray-400 text-white py-2 px-4 rounded-md"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (productoEditar) {
-                                        tipoEdicion === 'agregar'
-                                            ? agregarNuevoProducto(productoEditar)
-                                            : manejarGuardarCambiosProducto(productoEditar);
-                                    } else if (tipoEdicion === 'editar') {
-                                        editarCategoriaSeleccionada();
-                                    } else {
-                                        agregarNuevaCategoria(categoriaEditar);
+                            <input
+                                type="text"
+                                value={productoEditar.descripcion}
+                                onChange={(e) => setProductoEditar({ ...productoEditar, descripcion: e.target.value })}
+                                placeholder="Descripción"
+                                className="p-3 border mb-4 w-full"
+                            />
+                            <input
+                                type="number"
+                                value={productoEditar.precio}
+                                onChange={(e) => setProductoEditar({ ...productoEditar, precio: parseFloat(e.target.value) })}
+                                placeholder="Precio"
+                                className="p-3 border mb-4 w-full"
+                            />
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                            setProductoEditar({ ...productoEditar, imagen: reader.result });
+                                        };
+                                        reader.readAsDataURL(file);
                                     }
                                 }}
-                                className="bg-blue-600 text-white py-2 px-4 rounded-md"
-                            >
-                                Guardar cambios
-                            </button>
-                        </div>
+                                className="p-3 border mb-4 w-full"
+                            />
+                            {productoEditar.imagen && (
+                                <img src={productoEditar.imagen} alt="Vista previa" className="w-32 h-32 object-cover mt-4" />
+                            )}
+                        </>
+                    ) : (
+                        <input
+                            type="text"
+                            value={categoriaEditar}
+                            onChange={(e) => setCategoriaEditar(e.target.value)}
+                            placeholder="Nombre de la categoría"
+                            className="p-3 border mb-4 w-full"
+                        />
+                    )}
+                    <div className="flex justify-end space-x-4">
+                        <button
+                            onClick={() => setMostrarModalEditar(false)}
+                            className="bg-gray-300 text-black py-2 px-4 rounded-lg hover:bg-gray-400"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={() => {
+                                tipoEdicion === 'agregar'
+                                    ? productoEditar
+                                        ? agregarNuevoProducto(productoEditar)
+                                        : agregarNuevaCategoria(categoriaEditar)
+                                    : productoEditar
+                                    ? manejarGuardarCambiosProducto(productoEditar)
+                                    : editarCategoriaSeleccionada();
+                            }}
+                            className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+                        >
+                            Guardar
+                        </button>
                     </div>
                 </div>
-            )}
+            </div>
+        )}
         </div>
     );
 };
