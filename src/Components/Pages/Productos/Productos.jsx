@@ -110,7 +110,7 @@ const Productos = () => {
     return (
         <div className="container mx-auto p-8">
         {/* Categoría */}
-        <div className="mb-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-600">
+        <div className="mb-8 bg-gray-200 p-6 rounded-xl shadow-lg border-t-4 border-red-800">
             <div className="flex flex-col items-center space-y-4">
                 <div className="flex space-x-6 items-center w-full justify-center">
                     <select
@@ -143,7 +143,7 @@ const Productos = () => {
         </div>
 
         {/* Barra de búsqueda y botón de agregar producto */}
-        <div className="flex flex-col items-center justify-between mb-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-600">
+        <div className="flex flex-col items-center justify-between mb-8 bg-gray-200 p-6 rounded-xl shadow-lg border-t-4 border-red-800">
             {/* Barra de búsqueda */}
             <div className="relative w-full md:w-3/4 lg:w-1/2 mb-4">
                 <input
@@ -169,7 +169,7 @@ const Productos = () => {
         {/* Tabla de productos */}
         <div className="overflow-x-auto">
             <table className="min-w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-md">
-                <thead className="bg-gray-100">
+                <thead className="bg-gray-400">
                     <tr>
                         <th className="border border-gray-300 px-4 py-3 text-left">ID</th>
                         <th className="border border-gray-300 px-4 py-3 text-left">Imagen</th>
@@ -211,7 +211,7 @@ const Productos = () => {
             </table>
         </div>
 
-        {/* Modal de edición */}
+        {/* Modal de edición Posdata: agregar scroll para evitar desbordamientos*/}
         {mostrarModalEditar && (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
                 <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
