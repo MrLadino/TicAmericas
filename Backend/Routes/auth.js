@@ -1,18 +1,17 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const db = require("../Config/db");
 const { check, validationResult } = require("express-validator");
 
 const router = express.Router();
 
-// Endpoint para registrar usuarios
+// LOGIN
 router.post(
-  "/signup",
+  "/login",
   [
     check("email", "El correo electrónico no es válido").isEmail(),
-    check("password", "La contraseña debe tener al menos 6 caracteres").isLength({ min: 6 }),
-    check("nombre", "El nombre es obligatorio").notEmpty(),
-    check("rol", "El rol es obligatorio").notEmpty(),
+    check("password", "La contraseña es obligatoria").notEmpty(),
   ],
   async (req, res) => {
     try {
@@ -21,26 +20,32 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { nombre, email, password, rol } = req.body;
+      const { email, password } = req.body;
 
-      // Verificar si el usuario ya existe
-      const [existingUser] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-      if (existingUser.length > 0) {
-        return res.status(400).json({ message: "El correo ya está registrado" });
+      // Buscar usuario en la base de datos
+      const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+      if (rows.length === 0) {
+        return res.status(401).json({ message: "Correo o contraseña incorrectos" });
       }
 
-      // Encriptar la contraseña
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      const user = rows[0];
 
-      // Insertar el usuario en la base de datos
-      await db.query("INSERT INTO users (nombre, email, password, rol) VALUES (?, ?, ?, ?)", 
-        [nombre, email, hashedPassword, rol]);
+      // Comparar contraseñas
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ message: "Correo o contraseña incorrectos" });
+      }
 
-      res.status(201).json({ message: "Usuario registrado exitosamente" });
+      // Generar token JWT
+      const token = jwt.sign(
+        { userId: user.user_id, role: user.role },
+        process.env.JWT_SECRET || "secret", // Usa una variable de entorno para mayor seguridad
+        { expiresIn: "1h" }
+      );
 
+      res.json({ message: "Login exitoso", token, user });
     } catch (error) {
-      console.error("Error en /signup:", error);
+      console.error("Error en /login:", error);
       res.status(500).json({ message: "Error en el servidor" });
     }
   }

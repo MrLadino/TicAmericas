@@ -10,21 +10,26 @@ const Profile = () => {
     handleSave,
   } = useProfile();
 
+  const { companyName, companyDescription, companyLocation, companyPhone } =
+    userInfo.companyInfo || {};
+
   return (
     <div className="container mx-auto p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Perfil de usuario a la izquierda */}
         <div className="bg-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out">
           <h2 className="text-4xl font-bold text-red-600 mb-6">Mi Perfil</h2>
-          
+
           {/* Foto de perfil */}
           <div className="flex items-center space-x-6">
             <div className="w-40 h-40 rounded-full overflow-hidden shadow-xl">
-              <img
-                src={userInfo.profilePhoto}
-                alt="Foto de perfil"
-                className="w-full h-full object-cover"
-              />
+              {userInfo.profilePhoto && (
+                <img
+                  src={userInfo.profilePhoto}
+                  alt="Foto de perfil"
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
           </div>
           {editing && (
@@ -47,7 +52,9 @@ const Profile = () => {
 
           {/* Información del usuario */}
           <div className="mt-6">
-            <h4 className="text-lg font-semibold text-gray-800">Nombre del usuario</h4>
+            <h4 className="text-lg font-semibold text-gray-800">
+              Nombre del usuario
+            </h4>
             <div className="mt-4">
               {editing ? (
                 <input
@@ -55,7 +62,7 @@ const Profile = () => {
                   name="name"
                   value={userInfo.name}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
                 />
               ) : (
                 <p className="text-gray-700">{userInfo.name}</p>
@@ -63,8 +70,10 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Información adicional del usuario */}
-          <h4 className="text-lg font-semibold text-gray-800 mt-6">Información adicional</h4>
+          {/* Información adicional */}
+          <h4 className="text-lg font-semibold text-gray-800 mt-6">
+            Información adicional
+          </h4>
           <div className="mt-4">
             <label className="block text-sm text-gray-600">Descripción</label>
             {editing ? (
@@ -72,14 +81,14 @@ const Profile = () => {
                 name="description"
                 value={userInfo.description}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
               />
             ) : (
               <p className="text-gray-700">{userInfo.description}</p>
             )}
           </div>
 
-          {/* Información de contacto del usuario */}
+          {/* Teléfono */}
           <div className="mt-4">
             <label className="block text-sm text-gray-600">Teléfono</label>
             {editing ? (
@@ -88,7 +97,7 @@ const Profile = () => {
                 name="phone"
                 value={userInfo.phone}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
               />
             ) : (
               <p className="text-gray-700">{userInfo.phone}</p>
@@ -96,9 +105,11 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Perfil de la empresa debajo del perfil del usuario */}
+        {/* Perfil de la empresa */}
         <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out">
-          <h2 className="text-4xl font-bold text-red-600 mb-6">Información de la Empresa</h2>
+          <h2 className="text-4xl font-bold text-red-600 mb-6">
+            Información de la Empresa
+          </h2>
 
           {/* Nombre de la empresa */}
           <div className="mt-6">
@@ -107,27 +118,31 @@ const Profile = () => {
               {editing ? (
                 <input
                   type="text"
-                  name="companyInfo.companyName"
-                  value={userInfo.companyInfo.companyName}
+                  name="companyName"
+                  value={companyName}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
                 />
               ) : (
-                <p className="text-gray-200">{userInfo.companyInfo.companyName}</p>
+                <p className="text-gray-200">{companyName}</p>
               )}
             </div>
           </div>
 
           {/* Foto de la empresa */}
           <div className="mt-6">
-            <label className="block text-sm text-gray-300">Foto de la Empresa</label>
+            <label className="block text-sm text-gray-300">
+              Foto de la Empresa
+            </label>
             <div className="flex items-center space-x-6">
               <div className="w-full h-40 rounded-md overflow-hidden shadow-xl">
-                <img
-                  src={userInfo.companyPhoto}
-                  alt="Foto de la empresa"
-                  className="w-full h-full object-cover"
-                />
+                {userInfo.companyPhoto && (
+                  <img
+                    src={userInfo.companyPhoto}
+                    alt="Foto de la empresa"
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
               {editing && (
                 <div className="mt-4 text-center">
@@ -155,52 +170,52 @@ const Profile = () => {
             <div className="mt-4">
               {editing ? (
                 <textarea
-                  name="companyInfo.companyDescription"
-                  value={userInfo.companyInfo.companyDescription}
+                  name="companyDescription"
+                  value={companyDescription}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                  className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
                 />
               ) : (
-                <p className="text-gray-200">{userInfo.companyInfo.companyDescription}</p>
+                <p className="text-gray-200">{companyDescription}</p>
               )}
             </div>
           </div>
 
-          {/* Ubicación de la empresa */}
+          {/* Ubicación */}
           <div className="mt-4">
-            <label className="block text-sm text-gray-300">Ubicación de la empresa</label>
+            <label className="block text-sm text-gray-300">Ubicación</label>
             {editing ? (
               <input
                 type="text"
-                name="companyInfo.companyLocation"
-                value={userInfo.companyInfo.companyLocation}
+                name="companyLocation"
+                value={companyLocation}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
               />
             ) : (
-              <p className="text-gray-200">{userInfo.companyInfo.companyLocation}</p>
+              <p className="text-gray-200">{companyLocation}</p>
             )}
           </div>
 
-          {/* Teléfono de la empresa */}
+          {/* Teléfono */}
           <div className="mt-4">
-            <label className="block text-sm text-gray-300">Teléfono de la empresa</label>
+            <label className="block text-sm text-gray-300">Teléfono</label>
             {editing ? (
               <input
                 type="text"
-                name="companyInfo.companyPhone"
-                value={userInfo.companyInfo.companyPhone}
+                name="companyPhone"
+                value={companyPhone}
                 onChange={handleChange}
-                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 p-2 mt-2 rounded-md focus:ring-2 focus:ring-red-500 text-black"
               />
             ) : (
-              <p className="text-gray-200">{userInfo.companyInfo.companyPhone}</p>
+              <p className="text-gray-200">{companyPhone}</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Botón de Editar/Hecho debajo de la información de la empresa */}
+      {/* Botón de Editar/Hecho */}
       <div className="w-full mt-8">
         <button
           onClick={editing ? handleSave : handleEdit}

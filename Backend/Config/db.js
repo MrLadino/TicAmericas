@@ -26,6 +26,6 @@ const pool = mysql.createPool({
         process.exit(1); // Salir del proceso si no hay conexión
     }
 })();
-
+    
 // Exportar el pool para usarlo en otras partes del proyecto
 module.exports = pool;

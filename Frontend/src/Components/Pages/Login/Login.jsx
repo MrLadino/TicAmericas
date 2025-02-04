@@ -1,28 +1,28 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../Context/AuthContext";
-import logo from "../../../assets/Logo.png"; // Reemplaza con la ruta correcta del logo
+import logo from "../../../assets/Logo.png"; // Asegúrate de que la ruta sea correcta
 
 const Login = () => {
-  const { login } = useAuth(); // Hook para acceder al contexto de autenticación
+  const { login } = useAuth(); // Hook para autenticación
+  const navigate = useNavigate();
+
+  // Estados del formulario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [role, setRole] = useState(""); // Rol del usuario
+  const [adminPassword, setAdminPassword] = useState(""); // Contraseña del admin
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState(""); // Estado para el rol seleccionado
-  const [adminPassword, setAdminPassword] = useState(""); // Estado para la contraseña de admin
-  const navigate = useNavigate();
 
+  // Manejo del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       const success = await login(email, password);
-      console.log("Inicio de sesión exitoso:", success);
-      if (success) {
-        navigate("/home"); // Redirige al usuario a la página de inicio
-      }
+      if (success) navigate("/home"); // Redirige al home si inicia sesión
     } catch (error) {
       console.error("Error al iniciar sesión:", error.message);
       alert(error.message);
@@ -36,72 +36,57 @@ const Login = () => {
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         {/* Logo */}
         <div className="text-center mb-6">
-          <img
-            src={logo}
-            alt="Logo de la empresa"
-            className="w-20 h-20 mx-auto"
-          />
+          <img src={logo} alt="Logo de la empresa" className="w-20 h-20 mx-auto" />
         </div>
-        <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">
-          Bienvenido
-        </h2>
-        <p className="text-center text-gray-500 mb-6">
-          Ingresa tus credenciales para continuar.
-        </p>
+
+        {/* Título */}
+        <h2 className="text-2xl font-bold text-center text-gray-800">Bienvenido</h2>
+        <p className="text-center text-gray-500 mb-6">Ingresa tus credenciales para continuar.</p>
+
         {/* Formulario */}
         <form onSubmit={handleSubmit}>
-          {/* Campo de correo electrónico */}
+          {/* Correo electrónico */}
           <div className="mb-4">
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold text-gray-700"
-            >
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
               Correo electrónico
             </label>
             <input
               type="email"
               id="email"
-              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
               placeholder="tucorreo@ejemplo.com"
               required
             />
           </div>
-          {/* Campo de contraseña */}
+
+          {/* Contraseña */}
           <div className="mb-4">
-            <label
-              htmlFor="password"
-              className="block text-sm font-semibold text-gray-700"
-            >
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
               Contraseña
             </label>
             <input
               type="password"
               id="password"
-              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
               placeholder="Ingresa tu contraseña"
               required
             />
           </div>
-          {/* Menú desplegable para seleccionar el rol */}
+
+          {/* Selección de Rol */}
           <div className="mb-4">
-            <label
-              htmlFor="role"
-              className="block text-sm font-semibold text-gray-700"
-            >
+            <label htmlFor="role" className="block text-sm font-semibold text-gray-700">
               Rol
             </label>
             <select
               id="role"
-              name="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
               required
             >
               <option value="">Selecciona un rol</option>
@@ -109,28 +94,26 @@ const Login = () => {
               <option value="usuario">Usuario</option>
             </select>
           </div>
-          {/* Campo de contraseña de admin (solo si se selecciona admin) */}
+
+          {/* Contraseña de Admin (solo si se selecciona el rol admin) */}
           {role === "admin" && (
             <div className="mb-4">
-              <label
-                htmlFor="adminPassword"
-                className="block text-sm font-semibold text-gray-700"
-              >
+              <label htmlFor="adminPassword" className="block text-sm font-semibold text-gray-700">
                 Contraseña de Admin
               </label>
               <input
                 type="password"
                 id="adminPassword"
-                name="adminPassword"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Ingresa la contraseña de admin"
-                required={role === "admin"}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                placeholder="Contraseña de admin"
+                required
               />
             </div>
           )}
-          {/* Checkbox de recordar */}
+
+          {/* Recuérdame y ¿Olvidaste tu contraseña? */}
           <div className="flex items-center justify-between mb-6">
             <label className="flex items-center text-sm text-gray-600">
               <input
@@ -145,19 +128,19 @@ const Login = () => {
               ¿Olvidaste tu contraseña?
             </a>
           </div>
-          {/* Botón de inicio de sesión */}
+
+          {/* Botón de Iniciar Sesión */}
           <button
             type="submit"
             className={`w-full py-3 rounded-lg text-white font-semibold transition ${
-              isLoading
-                ? "bg-red-400 cursor-not-allowed"
-                : "bg-red-500 hover:bg-red-600"
+              isLoading ? "bg-red-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"
             }`}
             disabled={isLoading}
           >
             {isLoading ? "Cargando..." : "Iniciar sesión"}
           </button>
         </form>
+
         {/* Enlace para registrarse */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">

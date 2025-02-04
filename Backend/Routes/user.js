@@ -16,23 +16,19 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json({ message: "Nombre, email y contraseña son obligatorios" });
     }
 
-    // Validación del formato del correo electrónico
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
         return res.status(400).json({ message: "Correo electrónico inválido" });
     }
 
     try {
-        // Verificar si el usuario ya existe
         const [[existingUser]] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
         if (existingUser) {
             return res.status(400).json({ message: "El usuario ya está registrado" });
         }
 
-        // Encriptar contraseña
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insertar usuario
         const sql = `INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`;
         const values = [name, email, hashedPassword, role || 'usuario'];
 
@@ -53,26 +49,27 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // Verificar si el usuario existe
         const [[user]] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
         if (!user) {
             return res.status(400).json({ message: "Usuario no encontrado" });
         }
 
-        // Comparar contraseñas
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
             return res.status(400).json({ message: "Contraseña incorrecta" });
         }
 
-        // Crear token JWT
         const token = jwt.sign(
             { user_id: user.user_id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
 
-        res.status(200).json({ message: "Login exitoso", token });
+        res.status(200).json({ 
+            message: "Login exitoso", 
+            token,
+            user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role }
+        });
     } catch (error) {
         console.error("Error en el login:", error);
         res.status(500).json({ message: "Error en el servidor" });
@@ -90,52 +87,59 @@ router.get('/', verifyToken, verifyAdmin, async (req, res) => {
     }
 });
 
-// **Actualizar usuario**
-router.put('/:id', verifyToken, async (req, res) => {
-    const { name, email, role } = req.body;
-    const userId = req.params.id;
+// **Actualizar información del perfil y empresa**
+router.put('/update-profile', verifyToken, async (req, res) => {
+    const { user_id, name, email, phone, description, profile_photo, company_id, company_name } = req.body;
 
-    if (!name && !email && !role) {
-        return res.status(400).json({ message: "Debe proporcionar al menos uno de los campos para actualizar" });
+    if (req.user.user_id !== parseInt(user_id) && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "No tienes permiso para modificar este perfil" });
     }
 
     try {
-        // Verificar si el usuario existe
-        const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [userId]);
-        if (user.length === 0) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
+        // Actualizar usuario
+        await db.query(
+            `UPDATE users 
+            SET name = COALESCE(?, name), 
+                email = COALESCE(?, email), 
+                phone = COALESCE(?, phone), 
+                description = COALESCE(?, description), 
+                profile_photo = COALESCE(?, profile_photo)
+            WHERE user_id = ?`,
+            [name, email, phone, description, profile_photo, user_id]
+        );
+
+        // Actualizar empresa (si se proporciona una empresa)
+        if (company_id && company_name) {
+            await db.query(
+                `UPDATE companies 
+                SET name = ? 
+                WHERE id = ?`,
+                [company_name, company_id]
+            );
         }
 
-        // Actualizar los campos proporcionados
-        const updateQuery = `
-            UPDATE users
-            SET name = COALESCE(?, name),
-                email = COALESCE(?, email),
-                role = COALESCE(?, role)
-            WHERE user_id = ?
-        `;
-        const values = [name, email, role, userId];
-
-        await db.query(updateQuery, values);
-        res.status(200).json({ message: "Usuario actualizado exitosamente" });
+        res.status(200).json({ message: "Perfil actualizado correctamente" });
     } catch (error) {
-        console.error("Error al actualizar usuario:", error);
+        console.error("Error al actualizar perfil:", error);
         res.status(500).json({ message: "Error en el servidor" });
     }
 });
 
-// **Eliminar usuario**
+// **Eliminar usuario (solo admins o el propio usuario)**
 router.delete('/:id', verifyToken, async (req, res) => {
     const userId = req.params.id;
 
     try {
-        // Verificar si el usuario existe
-        const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [userId]);
-        if (user.length === 0) {
+        const [[user]] = await db.query("SELECT * FROM users WHERE user_id = ?", [userId]);
+        if (!user) {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
 
-        // Eliminar el usuario
+        // Solo el propio usuario o un admin pueden eliminar la cuenta
+        if (req.user.role !== 'admin' && req.user.user_id !== parseInt(userId)) {
+            return res.status(403).json({ message: "No tienes permiso para eliminar este usuario" });
+        }
+
         await db.query("DELETE FROM users WHERE user_id = ?", [userId]);
         res.status(200).json({ message: "Usuario eliminado exitosamente" });
     } catch (error) {

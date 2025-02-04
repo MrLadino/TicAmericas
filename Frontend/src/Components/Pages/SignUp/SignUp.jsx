@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Importamos useNavigate
 import logo from "../../../assets/Logo.png"; // Importación del logo
 import axios from "axios";
 
@@ -11,35 +12,40 @@ const SignUp = () => {
   const [isAdminNotified, setIsAdminNotified] = useState(false); // Notificación para admin
   const [error, setError] = useState(""); // Estado para manejar errores
   const [successMessage, setSuccessMessage] = useState(""); // Estado para el mensaje de éxito
+  const navigate = useNavigate(); // Hook para redirigir
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden. Por favor, inténtalo de nuevo.");
       return;
     }
 
-    setError(""); // Limpiar el mensaje de error previo
+    setError("");
     setIsLoading(true);
 
     try {
       const response = await axios.post("http://localhost:5000/api/signup", {
         email,
         password,
-        name: email.split("@")[0], // Se toma la parte antes del '@' como nombre
-        role, 
+        name: email.split("@")[0],
+        role,
       });
 
       setIsLoading(false);
       setSuccessMessage(response.data.message);
-      setError(""); // Limpiar errores
+      setError("");
 
-      // Si es admin, muestra la notificación
       if (role === "admin") {
         setIsAdminNotified(true);
       }
+
+      // Redirigir a login después de un registro exitoso
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000); // Espera 2 segundos antes de redirigir
+
     } catch (error) {
       setIsLoading(false);
       if (error.response) {
@@ -59,7 +65,6 @@ const SignUp = () => {
         <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">Crear Cuenta</h2>
         <p className="text-center text-gray-500 mb-6">Ingresa tus datos para registrarte.</p>
         <form onSubmit={handleSubmit}>
-          {/* Correo electrónico */}
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
               Correo electrónico
@@ -75,7 +80,6 @@ const SignUp = () => {
             />
           </div>
 
-          {/* Contraseña */}
           <div className="mb-4">
             <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
               Contraseña
@@ -91,7 +95,6 @@ const SignUp = () => {
             />
           </div>
 
-          {/* Confirmar Contraseña */}
           <div className="mb-4">
             <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700">
               Confirmar Contraseña
@@ -110,7 +113,6 @@ const SignUp = () => {
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </div>
 
-          {/* Seleccionar Rol */}
           <div className="mb-4">
             <label htmlFor="role" className="block text-sm font-semibold text-gray-700">
               Rol
@@ -128,19 +130,16 @@ const SignUp = () => {
             </select>
           </div>
 
-          {/* Notificación si es Admin */}
           {isAdminNotified && role === "admin" && (
             <div className="mb-4 text-center text-sm text-red-500">
               Este rol requiere autorización. Serás notificado cuando se apruebe.
             </div>
           )}
 
-          {/* Mensaje de éxito */}
           {successMessage && (
             <div className="mb-4 text-center text-sm text-green-500">{successMessage}</div>
           )}
 
-          {/* Botón de Crear Cuenta */}
           <div className="mb-4">
             <button
               type="submit"
