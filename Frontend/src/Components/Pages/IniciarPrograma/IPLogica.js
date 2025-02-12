@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const useIniciarPrograma = () => {
+  const navigate = useNavigate();
   const [modo, setModo] = useState("");
   const [categorias, setCategorias] = useState([]);
   const [elementos, setElementos] = useState({});
@@ -9,18 +11,22 @@ const useIniciarPrograma = () => {
   const [error, setError] = useState("");
   const [mostrarPanel, setMostrarPanel] = useState(false);
 
+  // Validar si hay al menos una categoría con imágenes o videos
+  const validarPublicidad = () => {
+    return categorias.some((categoria) => elementos[categoria]?.length > 0);
+  };
+
   const iniciarPrograma = () => {
-    setModo("iniciar");
-    alert("Programa iniciado exitosamente.");
+    if (validarPublicidad()) {
+      setModo("iniciar");
+      navigate("/iniciarprograma/programa"); // Redirigir a la página de programa
+    } else {
+      alert("Debes configurar al menos una categoría con imágenes o videos antes de iniciar.");
+    }
   };
 
   const abrirAdministrarPublicidad = () => {
     setModo("administrar");
-  };
-
-  const validarPublicidad = () => {
-    // Comprueba si hay elementos en las categorías.
-    return categorias.some((categoria) => elementos[categoria]?.length > 0);
   };
 
   const agregarCategoria = () => {
@@ -83,9 +89,7 @@ const useIniciarPrograma = () => {
   };
 
   const eliminarElemento = (categoria, archivo) => {
-    if (
-      window.confirm(`¿Estás seguro de eliminar este archivo? (${archivo.name})`)
-    ) {
+    if (window.confirm(`¿Estás seguro de eliminar este archivo? (${archivo.name})`)) {
       setElementos({
         ...elementos,
         [categoria]: elementos[categoria].filter((item) => item !== archivo),
@@ -128,7 +132,7 @@ const useIniciarPrograma = () => {
     seleccionarArchivo,
     cerrarPanel,
     volverAlEstadoBase,
-    validarPublicidad
+    validarPublicidad,
   };
 };
 

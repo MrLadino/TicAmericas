@@ -7,7 +7,7 @@ const Home = () => {
     <div className="flex flex-col min-h-screen bg-white text-black">
       <main className="flex-grow">
         {/* Título */}
-        <h1 className="text-center mt-16 text-4xl sm:text-5xl md:text-6xl font-extrabold text-black">
+        <h1 className="text-center mt-32 text-4xl sm:text-5xl md:text-6xl font-extrabold text-black">
           Bienvenido a tu experiencia personalizada
         </h1>
 

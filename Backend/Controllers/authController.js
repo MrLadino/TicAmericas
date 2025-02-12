@@ -1,53 +1,54 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const User = require('../Routes/user'); // Asegúrate de que la ruta sea correcta
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import db from '../Config/db.js';
+import dotenv from 'dotenv';
 
-// Función para crear un nuevo usuario
-const registerUser = async (req, res) => {
+dotenv.config();
+
+// **Registrar un usuario**
+export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
     // Validaciones básicas
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "Todos los campos son requeridos" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Nombre, email y contraseña son obligatorios." });
     }
 
-    // Validación de correo electrónico
+    // Validación de formato de email
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Correo electrónico inválido" });
+      return res.status(400).json({ message: "Correo electrónico inválido." });
     }
 
-    // Verificar si el correo electrónico ya existe
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "El correo electrónico ya está en uso" });
+    // Verificar si el correo ya existe
+    const [[existingUser]] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (existingUser) {
+      return res.status(400).json({ message: "El correo ya está registrado." });
     }
 
-    // Encriptar la contraseña
+    // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userRole = role || 'usuario'; // Si no se envía, asignamos 'usuario'
 
-    // Crear el nuevo usuario
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
-
-    // Guardar el usuario en la base de datos
-    await newUser.save();
+    // Insertar usuario en la base de datos
+    const insertUserQuery = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+    const [result] = await db.query(insertUserQuery, [name, email, hashedPassword, userRole]);
 
     // Generar JWT
-    const token = jwt.sign({ userId: newUser._id, role: newUser.role }, 'tu_secreto', { expiresIn: '1h' });
+    const token = jwt.sign(
+      { user_id: result.insertId, email, role: userRole },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
-    res.status(201).json({ message: "Usuario creado exitosamente", token });
+    res.status(201).json({ 
+      message: "✅ Usuario registrado exitosamente.", 
+      token 
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message || "Error al crear el usuario" });
+    console.error("❌ Error en registerUser:", error);
+    res.status(500).json({ message: "Error al registrar el usuario." });
   }
-};
-
-module.exports = {
-  registerUser,
 };

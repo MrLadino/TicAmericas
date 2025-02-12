@@ -68,7 +68,12 @@ router.post('/login', async (req, res) => {
         res.status(200).json({ 
             message: "Login exitoso", 
             token,
-            user: { user_id: user.user_id, name: user.name, email: user.email, role: user.role }
+            user: { 
+                user_id: user.user_id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role 
+            }
         });
     } catch (error) {
         console.error("Error en el login:", error);
@@ -79,7 +84,9 @@ router.post('/login', async (req, res) => {
 // **Obtener todos los usuarios (solo admins)**
 router.get('/', verifyToken, verifyAdmin, async (req, res) => {
     try {
-        const [users] = await db.query("SELECT user_id, name, email, role FROM users");
+        const [users] = await db.query(
+            "SELECT user_id, name, email, role, phone, description, profile_photo FROM users"
+        );
         res.json(users);
     } catch (error) {
         console.error("Error al obtener usuarios:", error);
@@ -89,7 +96,10 @@ router.get('/', verifyToken, verifyAdmin, async (req, res) => {
 
 // **Actualizar información del perfil y empresa**
 router.put('/update-profile', verifyToken, async (req, res) => {
-    const { user_id, name, email, phone, description, profile_photo, company_id, company_name } = req.body;
+    const { 
+        user_id, name, email, phone, description, profile_photo, 
+        company_id, company_name, companyLocation, companyPhone 
+    } = req.body;
 
     if (req.user.user_id !== parseInt(user_id) && req.user.role !== 'admin') {
         return res.status(403).json({ message: "No tienes permiso para modificar este perfil" });
@@ -112,9 +122,12 @@ router.put('/update-profile', verifyToken, async (req, res) => {
         if (company_id && company_name) {
             await db.query(
                 `UPDATE companies 
-                SET name = ? 
-                WHERE id = ?`,
-                [company_name, company_id]
+                SET name = COALESCE(?, name),
+                    location = COALESCE(?, location),
+                    phone = COALESCE(?, phone),
+                    photo = COALESCE(?, photo)
+                WHERE company_id = ?`,
+                [company_name, companyLocation, companyPhone, profile_photo, company_id]
             );
         }
 
@@ -140,7 +153,12 @@ router.delete('/:id', verifyToken, async (req, res) => {
             return res.status(403).json({ message: "No tienes permiso para eliminar este usuario" });
         }
 
+        // Primero eliminar la empresa asociada
+        await db.query("DELETE FROM companies WHERE user_id = ?", [userId]);
+
+        // Luego eliminar el usuario
         await db.query("DELETE FROM users WHERE user_id = ?", [userId]);
+
         res.status(200).json({ message: "Usuario eliminado exitosamente" });
     } catch (error) {
         console.error("Error al eliminar usuario:", error);

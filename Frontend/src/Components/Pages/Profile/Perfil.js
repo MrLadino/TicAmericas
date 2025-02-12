@@ -1,33 +1,23 @@
+// perfil.js
 import { useState } from "react";
 
 export const useProfile = () => {
   const [editing, setEditing] = useState(false);
   const [userInfo, setUserInfo] = useState({
-    name: "Juan Pérez",
-    email: "juan.perez@example.com",
-    company: "TIC Americas",
-    profilePhoto: "https://via.placeholder.com/150",
-    companyPhoto: "https://via.placeholder.com/500x200",
-    description: "Desarrollador Full Stack en TIC Americas.",
-    phone: "123-456-7890",
-    position: "Desarrollador",
-    address: "Calle Ficticia 123, Ciudad Ejemplo",
-    birthDate: "1990-01-01",
-    socialLinks: {
-      linkedin: "https://www.linkedin.com/in/juanperez",
-      twitter: "https://twitter.com/juanperez",
-      github: "https://github.com/juanperez",
-    },
+    name: "",
+    email: "",
+    phone: "",
+    description: "",
+    profilePhoto: "",
     companyInfo: {
-      companyName: "TIC Americas",
-      companyDescription: "Empresa dedicada a la tecnología y desarrollo de software.",
-      companyLocation: "Calle Ficticia 123, Ciudad Ejemplo",
-      companyPhone: "987-654-3210",
-      companyWebsite: "https://ticamericas.com",
+      companyName: "",
+      companyDescription: "",
+      companyLocation: "",
+      companyPhone: "",
     },
   });
 
-  const handleEdit = () => setEditing(!editing);
+  const handleEdit = () => setEditing((prev) => !prev);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,25 +35,36 @@ export const useProfile = () => {
 
   const handleFileChange = (e) => {
     const { name, files } = e.target;
-    setUserInfo((prevInfo) => ({
-      ...prevInfo,
-      [name]: URL.createObjectURL(files[0]),
-    }));
+    if (files[0]) {
+      setUserInfo((prevInfo) => ({
+        ...prevInfo,
+        [name]: URL.createObjectURL(files[0]),
+      }));
+    }
   };
 
-  const handleCompanyPhotoToggle = () => {
-    setUserInfo((prevInfo) => ({
-      ...prevInfo,
-      companyPhoto:
-        prevInfo.companyPhoto === "https://via.placeholder.com/500x200"
-          ? "https://via.placeholder.com/150"
-          : "https://via.placeholder.com/500x200",
-    }));
-  };
-
-  const handleSave = () => {
-    alert("Cambios guardados exitosamente.");
-    setEditing(false);
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userInfo),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert("Cambios guardados exitosamente.");
+        setEditing(false);
+      } else {
+        alert("Error al guardar los cambios: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Hubo un problema al actualizar el perfil.");
+    }
   };
 
   return {
@@ -73,6 +74,5 @@ export const useProfile = () => {
     handleChange,
     handleFileChange,
     handleSave,
-    handleCompanyPhotoToggle,
   };
 };

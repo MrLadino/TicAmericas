@@ -26,8 +26,8 @@ const IniciarPrograma = () => {
   } = useIniciarPrograma();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full bg-white p-6 sm:p-8 rounded-xl shadow-xl text-center">
+    <div className="mt-20  min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4 sm:px-6 lg:px-8">
+      <div className="mt-14 max-w-2xl w-full bg-white p-6 sm:p-8 rounded-xl shadow-xl text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">Iniciar Programa</h2>
         <p className="text-gray-700 mb-6 text-sm sm:text-base">
           Este apartado te permite iniciar el programa o administrar la publicidad asociada.

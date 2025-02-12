@@ -42,4 +42,36 @@ const createUser = async (req, res) => {
     }
 };
 
-module.exports = { getUsers, getUserById, createUser };
+// Actualizar usuario
+const updateUser = async (req, res) => {
+    const userId = req.user.id;  // ID del usuario autenticado
+    const { name, email, description, phone, companyInfo } = req.body;
+
+    try {
+        // Verificar si el usuario existe
+        const [user] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        // Actualizar los datos del usuario
+        const [result] = await db.query(
+            `UPDATE users 
+            SET name = ?, email = ?, description = ?, phone = ?, companyInfo = ? 
+            WHERE id = ?`,
+            [name || user[0].name, email || user[0].email, description || user[0].description, phone || user[0].phone, JSON.stringify(companyInfo) || user[0].companyInfo, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: 'No se pudieron actualizar los datos' });
+        }
+
+        res.json({ message: 'Datos actualizados con éxito' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al actualizar los datos del perfil' });
+    }
+};
+
+module.exports = { getUsers, getUserById, createUser, updateUser };

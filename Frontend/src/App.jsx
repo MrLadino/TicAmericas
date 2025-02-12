@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "./Context/AuthContext";
+import { useAuth } from "./Context/AuthContext"; 
 import Header from "./Components/Layouts/Header/Header";
 import Footer from "./Components/Layouts/Footer/Footer";
 import Home from "./Components/Pages/Home/Inicio";
@@ -25,46 +25,17 @@ const App = () => {
 
       <main className="flex-grow">
         <Routes>
-          {/* Ruta principal */}
-          <Route
-            path="/"
-            element={authenticated ? <Navigate to="/home" /> : <Navigate to="/login" />}
-          />
-          {/* Rutas públicas */}
+          {/* Rutas protegidas y no protegidas */}
+          <Route path="/" element={authenticated ? <Navigate to="/home" /> : <Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
-
-          {/* Rutas protegidas */}
-          <Route
-            path="/home"
-            element={authenticated ? <Home /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/lector-estatico"
-            element={authenticated ? <IniciarPrograma /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/lector-dinamico"
-            element={authenticated ? <Caja /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/productos"
-            element={authenticated ? <Productos /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/profile"
-            element={authenticated ? <Profile /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/ayuda"
-            element={authenticated ? <Ayuda /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/programa"
-            element={authenticated ? <Programa /> : <Navigate to="/login" />}
-          />
-
-          {/* Ruta 404 */}
+          <Route path="/home" element={authenticated ? <Home /> : <Navigate to="/login" />} />
+          <Route path="/lector-estatico" element={authenticated ? <IniciarPrograma /> : <Navigate to="/login" />} />
+          <Route path="/lector-dinamico" element={authenticated ? <Caja /> : <Navigate to="/login" />} />
+          <Route path="/productos" element={authenticated ? <Productos /> : <Navigate to="/login" />} />
+          <Route path="/profile" element={authenticated ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/ayuda" element={authenticated ? <Ayuda /> : <Navigate to="/login" />} />
+          <Route path="/programa" element={authenticated ? <Programa /> : <Navigate to="/login" />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </main>

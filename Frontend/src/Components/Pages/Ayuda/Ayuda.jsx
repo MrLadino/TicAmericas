@@ -1,6 +1,6 @@
 const Ayuda = () => {
   return (
-    <div className="container mx-auto p-8 bg-gray-50 rounded-xl shadow-xl">
+    <div className="container mt-24 mx-auto p-8 bg-gray-50 rounded-xl shadow-xl">
       <h1 className="text-5xl font-extrabold text-center text-[#000000] mb-10">Manual de Usuario - TIC Americas</h1>
 
       <section className="mb-16">

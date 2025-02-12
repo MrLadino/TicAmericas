@@ -110,7 +110,7 @@ const Productos = () => {
     return (
         <div className="container mx-auto p-8">
         {/* Categoría */}
-        <div className="mb-8 bg-gray-200 p-6 rounded-xl shadow-lg border-t-4 border-red-800">
+        <div className=" mt-24  mb-8 bg-gray-200 p-6 rounded-xl shadow-lg border-t-4 border-red-800">
             <div className="flex flex-col items-center space-y-4">
                 <div className="flex space-x-6 items-center w-full justify-center">
                     <select

@@ -60,39 +60,3 @@ export default Slider;
 
 
 
-
-
-
-
-// import { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; // Importar useNavigate para navegar
-// import imagenProducto from '../../../assets/Productos1.png'; // Asegúrate de que esta imagen esté disponible
-
-// const Programa = () => {
-//   // Información del producto (puedes sustituirla por datos dinámicos)
-//   const producto = {
-//     nombre: 'Producto Ejemplo',
-//     descripcion: 'Este es un ejemplo de producto. Descripción detallada del producto que puede ser más extensa.',
-//     precio: '$199.99',
-//     imagen: imagenProducto,
-//   };
-
-//   return (
-//     <div className="flex items-center justify-center w-full h-screen bg-red-600 text-white">
-//       {/* Card del producto */}
-//       <div className="max-w-xl w-full bg-white rounded-lg shadow-xl p-6 space-y-6">
-//         {/* Imagen del producto */}
-//         <img src={producto.imagen} alt={producto.nombre} className="w-full h-60 object-cover rounded-md shadow-md" />
-
-//         {/* Contenido de la tarjeta */}
-//         <div className="text-center">
-//           <h2 className="text-3xl font-bold text-black">{producto.nombre}</h2>
-//           <p className="text-xl text-gray-700 mt-2">{producto.descripcion}</p>
-//           <p className="text-2xl font-semibold text-red-600 mt-4">{producto.precio}</p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Programa;
