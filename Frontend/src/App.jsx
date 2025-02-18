@@ -1,49 +1,24 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "./Context/AuthContext"; 
+// Frontend/src/App.jsx
+import React from "react";
+import { useLocation } from "react-router-dom";
 import Header from "./Components/Layouts/Header/Header";
 import Footer from "./Components/Layouts/Footer/Footer";
-import Home from "./Components/Pages/Home/Inicio";
-import Login from "./Components/Pages/Login/Login";
-import IniciarPrograma from "./Components/Pages/IniciarPrograma/IniciarPrograma";
-import Productos from "./Components/Pages/Productos/Productos";
-import Profile from "./Components/Pages/Profile/Profile";
-import SignUp from "./Components/Pages/SignUp/SignUp";
-import Ayuda from "./Components/Pages/Ayuda/Ayuda";
-import Programa from "./Components/Pages/Programa/Programa";
-import Caja from "./Components/Pages/Caja/Caja";
+import AppRoutes from "./Routes/Routes";
 
 const App = () => {
-  const { authenticated } = useAuth();
   const location = useLocation();
+  // Define las rutas en las que NO se muestra el header y el footer
+  const hideHeaderFooter = ["/login", "/signup", "/programa"];
+  const showHeader = !hideHeaderFooter.includes(location.pathname);
+  const showFooter = !hideHeaderFooter.includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Renderiza el Header si no estás en login/signup */}
-      {location.pathname !== "/login" &&
-        location.pathname !== "/signup" &&
-        location.pathname !== "/programa" && <Header />}
-
+      {showHeader && <Header />}
       <main className="flex-grow">
-        <Routes>
-          {/* Rutas protegidas y no protegidas */}
-          <Route path="/" element={authenticated ? <Navigate to="/home" /> : <Navigate to="/login" />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/home" element={authenticated ? <Home /> : <Navigate to="/login" />} />
-          <Route path="/lector-estatico" element={authenticated ? <IniciarPrograma /> : <Navigate to="/login" />} />
-          <Route path="/lector-dinamico" element={authenticated ? <Caja /> : <Navigate to="/login" />} />
-          <Route path="/productos" element={authenticated ? <Productos /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={authenticated ? <Profile /> : <Navigate to="/login" />} />
-          <Route path="/ayuda" element={authenticated ? <Ayuda /> : <Navigate to="/login" />} />
-          <Route path="/programa" element={authenticated ? <Programa /> : <Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
+        <AppRoutes />
       </main>
-
-      {/* Renderiza el Footer si no estás en login/signup */}
-      {location.pathname !== "/login" &&
-        location.pathname !== "/signup" &&
-        location.pathname !== "/programa" && <Footer />}
+      {showFooter && <Footer />}
     </div>
   );
 };

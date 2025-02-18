@@ -17,7 +17,6 @@ const router = express.Router();
 
 app.use(express.json());
 
-// Configurar CORS
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -35,13 +34,12 @@ if (!fs.existsSync(uploadDir)) {
 // Hacer pública la carpeta "uploads"
 app.use("/uploads", express.static(uploadDir));
 
-// Configuración de Multer para subida de imágenes
+// Configuración de Multer para subida de imágenes (para el endpoint /upload)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir); // Carpeta donde se guardan las imágenes
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Se genera un nombre único con timestamp y la extensión original
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
@@ -55,11 +53,7 @@ const fileFilter = (req, file, cb) => {
 };
 const upload = multer({ storage, fileFilter });
 
-//
 // ===================== AUTENTICACIÓN ===================== //
-//
-
-// Registro de usuario
 router.post("/signup", async (req, res) => {
   const { name, email, password, role } = req.body;
   if (!name || !email || !password) {
@@ -81,7 +75,6 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Login de usuario
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -120,12 +113,9 @@ router.post("/login", async (req, res) => {
 });
 
 // ===================== PERFIL DEL USUARIO ===================== //
-
-// Obtener perfil del usuario autenticado (incluye datos de la empresa)
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
-    // Usamos LEFT JOIN para traer datos de la empresa si existen (sin el campo "contact" ya que no lo tenemos en la BD)
     const [result] = await db.query(
       `SELECT 
           u.user_id, u.name, u.email, u.role, u.phone, u.profile_photo, u.description,
@@ -146,7 +136,6 @@ router.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// Actualizar perfil del usuario (y empresa)
 router.put("/profile", verifyToken, async (req, res) => {
   const {
     name,
@@ -162,16 +151,13 @@ router.put("/profile", verifyToken, async (req, res) => {
   } = req.body;
   const userId = req.user.user_id;
   try {
-    // Actualizar datos del usuario
     await db.query(
       `UPDATE users SET name = ?, email = ?, description = ?, phone = ?, profile_photo = ?
        WHERE user_id = ?`,
       [name, email, description, phone, profile_photo, userId]
     );
-    // Verificar si ya existe empresa para este usuario
     const [existingCompany] = await db.query("SELECT * FROM companies WHERE user_id = ?", [userId]);
     if (existingCompany.length > 0) {
-      // Actualizar empresa
       await db.query(
         `UPDATE companies 
          SET name = ?, description = ?, location = ?, phone = ?, photo = ?
@@ -179,7 +165,6 @@ router.put("/profile", verifyToken, async (req, res) => {
         [companyName, companyDescription, companyLocation, companyPhone, companyPhoto, userId]
       );
     } else {
-      // Insertar nueva empresa
       await db.query(
         `INSERT INTO companies (user_id, name, description, location, phone, photo)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -193,7 +178,6 @@ router.put("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// Subida de imagen (se usa para subir imágenes tanto de usuario como de empresa)
 router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No se subió ninguna imagen." });
@@ -201,7 +185,6 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
   const userId = req.user.user_id;
   try {
-    // Aquí actualizamos la foto de perfil en la tabla users; si se sube otra imagen para empresa, se gestionará desde el PUT de perfil
     await db.query("UPDATE users SET profile_photo = ? WHERE user_id = ?", [imageUrl, userId]);
     res.status(200).json({ message: "Imagen subida correctamente", fileUrl: imageUrl });
   } catch (error) {
@@ -210,9 +193,15 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   }
 });
 
-// ===================== ADMINISTRACIÓN ===================== //
+// ===================== PUBLICIDAD (ADVERTISING) ===================== //
+const advertisingRoutes = require("./Routes/advertising");
+app.use("/api/advertising", advertisingRoutes);
 
-// Obtener todos los usuarios (solo admins)
+// ===================== PRODUCTOS ===================== //
+const productosRoutes = require("./Routes/productos");
+app.use("/api/productos", productosRoutes);
+
+// ===================== ADMINISTRACIÓN (USUARIOS) ===================== //
 router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const [users] = await db.query("SELECT user_id, name, email, role FROM users");
@@ -223,7 +212,6 @@ router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// Eliminar usuario (solo admins, no se permite autoeliminación)
 router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
   const userId = req.params.id;
   if (req.user.user_id == userId) {
@@ -242,7 +230,6 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// ===================== USO DE LAS RUTAS ===================== //
 app.use("/api", router);
 
 const PORT = process.env.PORT || 5000;
