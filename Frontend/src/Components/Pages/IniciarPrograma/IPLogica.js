@@ -1,16 +1,16 @@
-// Frontend/src/Components/Pages/IniciarPrograma/IPLogica.js
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const useIniciarPrograma = () => {
   const navigate = useNavigate();
 
-  const [modo, setModo] = useState(""); // "administrar" | "iniciar"
-  // categorías = [{ id: 1, name: 'Electrónica' }, ...]
+  // modo: "" (vista principal), "administrar" o "iniciar"
+  const [modo, setModo] = useState("");
+  // Categorías: [{ id, name }, ...]
   const [categorias, setCategorias] = useState([]);
-  // elementos = { "Electrónica": [{file_id, file_name, file_url, file_type}, ...], ... }
+  // Elementos: { "Categoria": [ { file_id, file_url, file_type, ... }, ... ], ... }
   const [elementos, setElementos] = useState({});
-  // categoría seleccionada = { id, name } o null
+  // Categoría seleccionada: { id, name } o null
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
 
   const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
@@ -30,21 +30,21 @@ const useIniciarPrograma = () => {
         return res.json();
       })
       .then((data) => {
-        // data: array de categorías con { category_id, name, user_id, files: [...] }
+        // data: [{ category_id, name, files: [...] }, ...]
         const cats = data.map((cat) => ({
           id: cat.category_id,
           name: cat.name,
         }));
         setCategorias(cats);
 
-        // Construimos "elementos"
+        // Construir "elementos": { "Categoria": [...], ... }
         const tempElementos = {};
         data.forEach((cat) => {
           tempElementos[cat.name] = cat.files || [];
         });
         setElementos(tempElementos);
 
-        // Seleccionar primera si no hay nada
+        // Seleccionar la primera categoría si no hay nada seleccionado
         if (cats.length > 0 && !categoriaSeleccionada) {
           setCategoriaSeleccionada(cats[0]);
         }
@@ -52,9 +52,10 @@ const useIniciarPrograma = () => {
       .catch((err) => {
         console.error("Error fetching advertising:", err);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2. Validar que exista al menos una categoría con archivos
+  // 2. Validar si al menos una categoría tiene archivos
   const validarPublicidad = () => {
     return Object.keys(elementos).some((catName) => {
       const arr = elementos[catName];
@@ -62,9 +63,12 @@ const useIniciarPrograma = () => {
     });
   };
 
-  // 3. Iniciar programa => redirige a /programa
+  // 3. Iniciar programa => almacenar categoría seleccionada y navegar a /programa
   const iniciarPrograma = () => {
     if (validarPublicidad()) {
+      if (categoriaSeleccionada && categoriaSeleccionada.name) {
+        localStorage.setItem("selectedCategory", categoriaSeleccionada.name);
+      }
       setModo("iniciar");
       navigate("/programa");
     } else {
@@ -77,13 +81,12 @@ const useIniciarPrograma = () => {
     setModo("administrar");
   };
 
-  // 5. Crear nueva categoría
-  const agregarCategoria = async () => {
-    const nuevaCategoria = prompt("Introduce el nombre de la nueva categoría:");
-    if (!nuevaCategoria) return;
+  // 5. Crear nueva categoría (recibe el nombre en vez de usar prompt)
+  const agregarCategoria = async (nuevaCategoria) => {
+    if (!nuevaCategoria || !nuevaCategoria.trim()) return;
 
-    // Chequear si ya existe localmente
-    if (categorias.some((c) => c.name === nuevaCategoria)) {
+    // Verificar duplicado local
+    if (categorias.some((c) => c.name.toLowerCase() === nuevaCategoria.toLowerCase())) {
       setError("El nombre de la categoría ya existe localmente.");
       return;
     }
@@ -102,17 +105,9 @@ const useIniciarPrograma = () => {
         const errData = await resp.json();
         throw new Error(errData.message || "Error al crear categoría");
       }
-      const data = await resp.json(); 
-      // data = { message, category_id, name }
-
-      // Actualizar estado local
-      setCategorias((prev) => [
-        ...prev,
-        { id: data.category_id, name: data.name },
-      ]);
+      const data = await resp.json();
+      setCategorias((prev) => [...prev, { id: data.category_id, name: data.name }]);
       setElementos((prev) => ({ ...prev, [data.name]: [] }));
-
-      // Seleccionar la nueva
       setCategoriaSeleccionada({ id: data.category_id, name: data.name });
       setError("");
     } catch (error) {
@@ -121,54 +116,45 @@ const useIniciarPrograma = () => {
     }
   };
 
-  // 6. Editar categoría
-  const editarCategoria = async (catId) => {
+  // 6. Editar categoría (recibe nuevoNombre en vez de usar prompt)
+  const editarCategoria = async (catId, nuevoNombre) => {
     const catObj = categorias.find((c) => c.id === Number(catId));
     if (!catObj) return;
+    if (!nuevoNombre || !nuevoNombre.trim()) return;
 
-    const nuevoNombre = prompt(
-      "Introduce el nuevo nombre para la categoría:",
-      catObj.name
-    );
-    if (!nuevoNombre) return;
-
-    // Si ya existe localmente
-    if (categorias.some((c) => c.name === nuevoNombre)) {
+    // Verificar duplicado local
+    if (categorias.some((c) => c.name.toLowerCase() === nuevoNombre.toLowerCase())) {
       setError("Ya existe otra categoría con ese nombre en tu estado local.");
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      const resp = await fetch(
-        `http://localhost:5000/api/advertising/category/${catObj.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ name: nuevoNombre }),
-        }
-      );
+      const resp = await fetch(`http://localhost:5000/api/advertising/category/${catObj.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: nuevoNombre }),
+      });
       if (!resp.ok) {
         const errData = await resp.json();
         throw new Error(errData.message || "Error al editar categoría");
       }
       // Actualizar estado local
-      // 1) Actualizar la lista "categorias"
       const nuevas = categorias.map((c) =>
         c.id === catObj.id ? { ...c, name: nuevoNombre } : c
       );
       setCategorias(nuevas);
 
-      // 2) Renombrar key en "elementos"
+      // Actualizar las claves en "elementos"
       const copiaElementos = { ...elementos };
       copiaElementos[nuevoNombre] = copiaElementos[catObj.name];
       delete copiaElementos[catObj.name];
       setElementos(copiaElementos);
 
-      // 3) Actualizar categoriaSeleccionada
+      // Si esta categoría estaba seleccionada, actualizamos su info
       setCategoriaSeleccionada({ id: catObj.id, name: nuevoNombre });
       setError("");
     } catch (error) {
@@ -177,46 +163,32 @@ const useIniciarPrograma = () => {
     }
   };
 
-  // 7. Eliminar categoría
+  // 7. Eliminar categoría (sin window.confirm)
   const eliminarCategoria = async (catId) => {
     const catObj = categorias.find((c) => c.id === Number(catId));
     if (!catObj) return;
 
-    if (!window.confirm(`¿Estás seguro de eliminar la categoría "${catObj.name}"?`)) {
-      return;
-    }
-
     try {
       const token = localStorage.getItem("token");
-      const resp = await fetch(
-        `http://localhost:5000/api/advertising/category/${catObj.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const resp = await fetch(`http://localhost:5000/api/advertising/category/${catObj.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!resp.ok) {
         const errData = await resp.json();
         throw new Error(errData.message || "Error al eliminar categoría");
       }
-
       // Actualizar estado local
       const nuevas = categorias.filter((c) => c.id !== catObj.id);
       setCategorias(nuevas);
-
       const copiaElementos = { ...elementos };
       delete copiaElementos[catObj.name];
       setElementos(copiaElementos);
-
-      // Seleccionar otra si queda
       if (nuevas.length > 0) {
         setCategoriaSeleccionada(nuevas[0]);
       } else {
         setCategoriaSeleccionada(null);
       }
-
       setError("");
     } catch (error) {
       console.error("Error al eliminar categoría:", error);
@@ -239,7 +211,6 @@ const useIniciarPrograma = () => {
       setError("No se seleccionaron archivos válidos.");
       return;
     }
-    // catObj
     const catObj = categorias.find((c) => c.name === catName);
     if (!catObj) {
       setError("Categoría no encontrada en el estado local.");
@@ -251,13 +222,7 @@ const useIniciarPrograma = () => {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const validTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-        "video/mp4",
-        "video/webm",
-      ];
+      const validTypes = ["image/jpeg", "image/png", "image/jpg", "video/mp4", "video/webm"];
       if (!validTypes.includes(file.type)) {
         alert(`Archivo "${file.name}" no permitido. Solo imágenes o videos.`);
         continue;
@@ -284,20 +249,17 @@ const useIniciarPrograma = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const newData = await resp2.json();
-
       const cats = newData.map((cat) => ({
         id: cat.category_id,
         name: cat.name,
       }));
       setCategorias(cats);
-
       const tempElementos = {};
       newData.forEach((cat) => {
         tempElementos[cat.name] = cat.files || [];
       });
       setElementos(tempElementos);
 
-      // Re-seleccionar la misma categoría
       const sameCat = cats.find((c) => c.id === catObj.id);
       if (sameCat) {
         setCategoriaSeleccionada(sameCat);
@@ -309,38 +271,21 @@ const useIniciarPrograma = () => {
     }
   };
 
-  // 10. Eliminar un archivo (imagen o video) REAL en BD
+  // 10. Eliminar un archivo (sin window.confirm)
   const eliminarElemento = async (catName, archivo) => {
-    if (
-      !window.confirm(
-        `¿Estás seguro de eliminar este archivo? (${archivo.file_name || archivo.name})`
-      )
-    ) {
-      return;
-    }
-
-    // Si es un archivo que ya existe en la BD => tiene file_id
     if (archivo.file_id) {
       try {
         const token = localStorage.getItem("token");
-        const resp = await fetch(
-          `http://localhost:5000/api/advertising/file/${archivo.file_id}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const resp = await fetch(`http://localhost:5000/api/advertising/file/${archivo.file_id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!resp.ok) {
           const errData = await resp.json();
           throw new Error(errData.message || "Error al eliminar archivo");
         }
-        // Una vez borrado en BD, actualizamos estado local
         const copia = { ...elementos };
-        copia[catName] = copia[catName].filter(
-          (item) => item.file_id !== archivo.file_id
-        );
+        copia[catName] = copia[catName].filter((item) => item.file_id !== archivo.file_id);
         setElementos(copia);
         cerrarPanel();
         setError("");
@@ -349,7 +294,7 @@ const useIniciarPrograma = () => {
         setError(error.message);
       }
     } else {
-      // Era un archivo local no subido
+      // Si era un archivo local (File) sin file_id
       const copia = { ...elementos };
       copia[catName] = copia[catName].filter(
         (item) =>
@@ -360,7 +305,7 @@ const useIniciarPrograma = () => {
     }
   };
 
-  // 11. Seleccionar archivo para panel
+  // 11. Seleccionar archivo (para mostrar panel)
   const seleccionarArchivo = (archivo) => {
     setArchivoSeleccionado(archivo);
     setMostrarPanel(true);
@@ -371,9 +316,9 @@ const useIniciarPrograma = () => {
     setMostrarPanel(false);
   };
 
-  // 12. "Hecho": vuelve al modo "administrar"
+  // 12. "Hecho": volver a la vista inicial
   const volverAlEstadoBase = () => {
-    setModo("administrar");
+    setModo("");
     setError("");
   };
 

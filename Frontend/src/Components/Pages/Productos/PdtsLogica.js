@@ -1,88 +1,205 @@
 // Frontend/src/Components/Pages/Productos/PdtsLogica.js
 
-// Función para generar un ID aleatorio de 5 dígitos (como string)
-export const generarIdCorto = () => {
+// MÉTODOS PARA MANIPULAR ARRAYS LOCALMENTE (OPCIONAL)
+export function generarIdCorto() {
   return String(Math.floor(10000 + Math.random() * 90000));
-};
+}
 
-// Agregar un nuevo producto
-export const agregarProducto = (productos, nuevoProducto) => {
-  if (!nuevoProducto.id) {
+export function agregarProducto(productos, nuevoProducto) {
+  if (!nuevoProducto.id || !nuevoProducto.id.trim()) {
     nuevoProducto.id = generarIdCorto();
   }
-  // Aseguramos que el SKU tenga máximo 5 caracteres
-  nuevoProducto.sku = (nuevoProducto.sku || "").toString().substring(0, 5);
+  nuevoProducto.sku = (nuevoProducto.sku || "").substring(0, 5);
   return [...productos, nuevoProducto];
-};
+}
 
-// Agregar una nueva categoría
-export const agregarCategoria = (categorias, nuevaCategoria) => {
+export function editarProducto(productos, productoEditado) {
+  return productos.map((p) =>
+    p.id === productoEditado.id ? productoEditado : p
+  );
+}
+
+export function eliminarProducto(productos, productoId) {
+  return productos.filter((p) => p.id !== productoId);
+}
+
+export function toggleEstadoProducto(productos, productoId) {
+  return productos.map((p) =>
+    p.id === productoId ? { ...p, activo: !p.activo } : p
+  );
+}
+
+export function filtrarProductosPorCategoria(productos, categoriaSeleccionada) {
+  if (categoriaSeleccionada === "General") return productos;
+  if (categoriaSeleccionada === "sin_categorias") return [];
+  return productos.filter((p) => p.categoria === categoriaSeleccionada);
+}
+
+export function filtrarProductosPorEstado(productos, estadoFiltro) {
+  return estadoFiltro === "activos"
+    ? productos.filter((p) => p.activo)
+    : productos.filter((p) => !p.activo);
+}
+
+export function filtrarProductosPorNombre(productos, nombre) {
+  if (!nombre.trim()) return productos;
+  return productos.filter((p) =>
+    p.nombre.toLowerCase().includes(nombre.toLowerCase())
+  );
+}
+
+export function agregarCategoria(categorias, nuevaCategoria) {
   const categoriaLimpia = nuevaCategoria.trim();
-  if (categoriaLimpia && !categorias.some(c => c.name === categoriaLimpia)) {
+  if (categoriaLimpia && !categorias.some((c) => c.name === categoriaLimpia)) {
     return [...categorias, { id: generarIdCorto(), name: categoriaLimpia }];
   }
   return categorias;
-};
+}
 
-// Filtrar productos por categoría
-export const filtrarProductosPorCategoria = (productos, categoriaSeleccionada) => {
-  return productos.filter((producto) => producto.categoria === categoriaSeleccionada);
-};
-
-// Filtrar productos por estado (activos/inactivos)
-export const filtrarProductosPorEstado = (productos, estadoFiltro) => {
-  return productos.filter((producto) =>
-    estadoFiltro === 'activos' ? producto.activo : !producto.activo
-  );
-};
-
-// Filtrar productos por nombre
-export const filtrarProductosPorNombre = (productos, nombre) => {
-  return productos.filter((producto) =>
-    producto.nombre.toLowerCase().includes(nombre.toLowerCase())
-  );
-};
-
-// Editar un producto existente
-export const editarProducto = (productos, productoEditado) => {
-  return productos.map((producto) =>
-    producto.id === productoEditado.id ? productoEditado : producto
-  );
-};
-
-// Eliminar un producto por su ID
-export const eliminarProducto = (productos, productoId) => {
-  return productos.filter((producto) => producto.id !== productoId);
-};
-
-// Actualizar la categoría de un producto existente
-export const actualizarCategoriaProducto = (productos, categoriaSeleccionada, nuevaCategoria) => {
-  return productos.map((producto) =>
+export function editarCategoriaYActualizarProductos(productos, categorias, categoriaSeleccionada, nuevaCategoria) {
+  const productosActualizados = productos.map((producto) =>
     producto.categoria === categoriaSeleccionada
       ? { ...producto, categoria: nuevaCategoria }
       : producto
   );
-};
-
-// Actualizar el nombre de una categoría (en el array de categorías)
-export const actualizarCategoria = (categorias, categoriaSeleccionada, nuevaCategoria) => {
-  return categorias.map((categoria) =>
-    categoria.name === categoriaSeleccionada ? { ...categoria, name: nuevaCategoria.trim() } : categoria
-  );
-};
-
-// Editar la categoría y actualizar los productos que la usan
-export const editarCategoriaYActualizarProductos = (productos, categorias, categoriaSeleccionada, nuevaCategoria) => {
-  const productosActualizados = actualizarCategoriaProducto(productos, categoriaSeleccionada, nuevaCategoria);
   const categoriasActualizadas = categorias.map((cat) =>
     cat.name === categoriaSeleccionada ? { ...cat, name: nuevaCategoria.trim() } : cat
   );
   return { productosActualizados, categoriasActualizadas };
-};
+}
 
-// Alternar el estado activo/inactivo de un producto
-export const toggleEstadoProducto = (productos, productoId) => {
-  return productos.map((producto) =>
-    producto.id === productoId ? { ...producto, activo: !producto.activo } : producto
+export function eliminarCategoria(productos, categorias, categoriaId) {
+  const catObj = categorias.find((c) => c.id === categoriaId);
+  const productosActualizados = productos.map((producto) =>
+    producto.categoria === (catObj ? catObj.name : "")
+      ? { ...producto, categoria: "" }
+      : producto
   );
-};
+  const categoriasActualizadas = categorias.filter((c) => c.id !== categoriaId);
+  return { productosActualizados, categoriasActualizadas };
+}
+
+// ====================== FUNCIONES PARA API (CRUD) ======================
+export async function getAllProductos(token) {
+  const res = await fetch("http://localhost:5000/api/productos", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Error al obtener productos");
+  return await res.json();
+}
+
+export async function createProductoInDB(nuevo, token) {
+  const resp = await fetch("http://localhost:5000/api/productos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(nuevo),
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al crear producto");
+  }
+  return await resp.json();
+}
+
+export async function updateProductoInDB(producto, token) {
+  const resp = await fetch(`http://localhost:5000/api/productos/${producto.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(producto),
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al actualizar producto");
+  }
+  return await resp.json();
+}
+
+export async function deleteProductoInDB(productId, token) {
+  const resp = await fetch(`http://localhost:5000/api/productos/${productId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al eliminar producto");
+  }
+  return await resp.json();
+}
+
+export async function toggleProductoActivoInDB(productId, token) {
+  const all = await getAllProductos(token);
+  const prod = all.find((p) => p.id === productId);
+  if (!prod) throw new Error("Producto no encontrado");
+  const updated = { ...prod, activo: !prod.activo };
+  const resp = await fetch(`http://localhost:5000/api/productos/${productId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(updated),
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al actualizar estado");
+  }
+  return await resp.json();
+}
+
+export async function getAllCategorias(token) {
+  const res = await fetch("http://localhost:5000/api/productos/categorias", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Error al obtener categorías");
+  return await res.json();
+}
+
+export async function createCategoriaInDB(name, token) {
+  const resp = await fetch("http://localhost:5000/api/productos/categorias", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al crear categoría");
+  }
+  return await resp.json();
+}
+
+export async function updateCategoriaInDB(id, newName, token) {
+  const resp = await fetch(`http://localhost:5000/api/productos/categorias/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al actualizar categoría");
+  }
+  return await resp.json();
+}
+
+export async function deleteCategoriaInDB(id, token) {
+  const resp = await fetch(`http://localhost:5000/api/productos/categorias/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!resp.ok) {
+    const errData = await resp.json();
+    throw new Error(errData.message || "Error al eliminar categoría");
+  }
+  return await resp.json();
+}

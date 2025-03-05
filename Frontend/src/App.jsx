@@ -7,8 +7,7 @@ import AppRoutes from "./Routes/Routes";
 
 const App = () => {
   const location = useLocation();
-  // Define las rutas en las que NO se muestra el header y el footer
-  const hideHeaderFooter = ["/login", "/signup", "/programa"];
+  const hideHeaderFooter = ["/login", "/signup", "/programa", "/forgot-password", "/reset-password"];
   const showHeader = !hideHeaderFooter.includes(location.pathname);
   const showFooter = !hideHeaderFooter.includes(location.pathname);
 

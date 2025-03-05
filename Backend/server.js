@@ -1,10 +1,11 @@
-// server.js
+// Backend/server.js
+
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const db = require("./Config/db"); // Conexión a la BD
+const db = require("./Config/db");
 const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
@@ -15,7 +16,19 @@ dotenv.config();
 const app = express();
 const router = express.Router();
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// Middleware global para CORS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+    return res.status(200).json({});
+  }
+  next();
+});
 
 app.use(
   cors({
@@ -25,16 +38,22 @@ app.use(
   })
 );
 
-// Asegurarse de que la carpeta "uploads" exista
+// Configuración para servir archivos estáticos (uploads)
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Hacer pública la carpeta "uploads"
-app.use("/uploads", express.static(uploadDir));
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+    next();
+  },
+  express.static(uploadDir)
+);
 
-// Configuración de Multer para subida de imágenes (para el endpoint /upload)
+// Configuración de Multer para manejo de archivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -44,16 +63,15 @@ const storage = multer.diskStorage({
   },
 });
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-  if (allowedTypes.includes(file.mimetype)) {
+  if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
-    cb(new Error("Formato de archivo no permitido"), false);
+    cb(new Error("Formato de archivo no permitido para perfil"), false);
   }
 };
 const upload = multer({ storage, fileFilter });
 
-// ===================== AUTENTICACIÓN ===================== //
+// Rutas de autenticación y usuario usando el router
 router.post("/signup", async (req, res) => {
   const { name, email, password, role } = req.body;
   if (!name || !email || !password) {
@@ -112,7 +130,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ===================== PERFIL DEL USUARIO ===================== //
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -193,15 +210,15 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   }
 });
 
-// ===================== PUBLICIDAD (ADVERTISING) ===================== //
+// Montar otras rutas (ejemplo: publicidad)
 const advertisingRoutes = require("./Routes/advertising");
 app.use("/api/advertising", advertisingRoutes);
 
-// ===================== PRODUCTOS ===================== //
+// Montar rutas de productos
 const productosRoutes = require("./Routes/productos");
 app.use("/api/productos", productosRoutes);
 
-// ===================== ADMINISTRACIÓN (USUARIOS) ===================== //
+// Rutas para administración de usuarios (ejemplo)
 router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const [users] = await db.query("SELECT user_id, name, email, role FROM users");
@@ -230,6 +247,7 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+// Montar el router en /api
 app.use("/api", router);
 
 const PORT = process.env.PORT || 5000;

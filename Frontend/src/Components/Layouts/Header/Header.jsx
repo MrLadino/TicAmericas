@@ -7,10 +7,13 @@ import exitImg from "../../../assets/Exit.png";
 import { Menu, X } from "lucide-react";
 
 const Header = () => {
-  const { logout, authenticated } = useAuth();
+  const { logout, authenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Determina si es admin
+  const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
     if (authenticated) {
@@ -21,6 +24,7 @@ const Header = () => {
     }
   };
 
+  // Ocultar el header si estamos en /programa
   if (location.pathname === "/programa") return null;
 
   return (
@@ -32,7 +36,7 @@ const Header = () => {
           <h1 className="text-2xl font-bold">TIC Americas</h1>
         </div>
 
-        {/* Botón de menú hamburguesa hasta 1023px */}
+        {/* Botón de menú hamburguesa (pantallas pequeñas) */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="lg:hidden text-white focus:outline-none"
@@ -48,34 +52,84 @@ const Header = () => {
         >
           <ul className="flex flex-col lg:flex-row lg:space-x-6 text-lg font-semibold">
             <li>
-              <Link to="/" className="hover:text-red-500 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Inicio</Link>
+              <Link
+                to="/"
+                className="hover:text-red-500 transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Inicio
+              </Link>
             </li>
+
+            {/* Link “Publicidad” según rol */}
             <li>
-              <Link to="/lector-estatico" className="hover:text-red-500 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Publicidad</Link>
+              {isAdmin ? (
+                <Link
+                  to="/lector-estatico"
+                  className="hover:text-red-500 transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Publicidad
+                </Link>
+              ) : (
+                <Link
+                  to="/programa"
+                  className="hover:text-red-500 transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Publicidad
+                </Link>
+              )}
             </li>
+
+            {/* Rutas visibles solo si está autenticado */}
             {authenticated && (
               <>
                 <li>
-                  <Link to="/lector-dinamico" className="hover:text-red-500 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Lector QR</Link>
+                  <Link
+                    to="/lector-dinamico"
+                    className="hover:text-red-500 transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Lector QR
+                  </Link>
                 </li>
                 <li>
-                  <Link to="/productos" className="hover:text-red-500 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Productos</Link>
+                  <Link
+                    to="/productos"
+                    className="hover:text-red-500 transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Productos
+                  </Link>
                 </li>
                 <li>
-                  <Link to="/profile" className="hover:text-red-500 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Perfil</Link>
+                  <Link
+                    to="/profile"
+                    className="hover:text-red-500 transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Perfil
+                  </Link>
                 </li>
                 <li>
-                  <Link to="/ayuda" className="hover:text-red-500 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Ayuda</Link>
+                  <Link
+                    to="/ayuda"
+                    className="hover:text-red-500 transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Ayuda
+                  </Link>
                 </li>
               </>
             )}
           </ul>
 
-          {/* Botón de logout */}
+          {/* Botón de logout (solo si autenticado) */}
           {authenticated && (
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center bg-red-700 p-3 rounded-full hover:bg-red-600 transition-all mt-4 lg:mt-0"
+              className="flex items-center justify-center bg-red-700 p-3 rounded-full hover:bg-red-600 transition-all mt-4 lg:mt-0 ml-0 lg:ml-4"
             >
               <img src={exitImg} alt="Salir" className="h-6 w-6" />
             </button>

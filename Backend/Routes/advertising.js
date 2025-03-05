@@ -1,86 +1,45 @@
-// Backend/Routes/advertising.js
 const express = require("express");
 const router = express.Router();
-const db = require("../Config/db");
+const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
+
+const advertisingController = require("../Controllers/advertisingController");
 const { verifyToken } = require("../Middlewares/authMiddleware");
 
-// Obtener todas las categorías del usuario
-router.get("/", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const [rows] = await db.query(
-      "SELECT category_id, user_id, name FROM advertising_categories WHERE user_id = ?",
-      [userId]
-    );
-    res.json(rows);
-  } catch (error) {
-    console.error("Error al obtener categorías:", error);
-    res.status(500).json({ message: "Error al obtener categorías" });
-  }
+// Configurar la carpeta de subida para publicidad
+// La carpeta "uploads" está en la raíz de Backend
+const uploadDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
 });
+const upload = multer({ storage });
 
-// Crear una nueva categoría
-router.post("/", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const { name } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: "Falta el nombre de la categoría" });
-    }
-    await db.query(
-      "INSERT INTO advertising_categories (user_id, name) VALUES (?, ?)",
-      [userId, name]
-    );
-    res.status(201).json({ message: "Categoría creada con éxito" });
-  } catch (error) {
-    console.error("Error al crear categoría:", error);
-    res.status(500).json({ message: "Error al crear categoría" });
-  }
-});
+// GET: Obtener todas las categorías con sus archivos
+router.get("/", verifyToken, advertisingController.getAdvertising);
 
-// Editar categoría
-router.put("/:id", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const { id } = req.params;
-    const { name } = req.body;
+// POST: Crear nueva categoría
+router.post("/category", verifyToken, advertisingController.createCategory);
 
-    const [result] = await db.query(
-      "UPDATE advertising_categories SET name = ? WHERE category_id = ? AND user_id = ?",
-      [name, id, userId]
-    );
-    if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "Categoría no encontrada o no pertenece al usuario" });
-    }
-    res.status(200).json({ message: "Categoría actualizada con éxito" });
-  } catch (error) {
-    console.error("Error al actualizar categoría:", error);
-    res.status(500).json({ message: "Error al actualizar categoría" });
-  }
-});
+// PUT: Editar categoría
+router.put("/category/:id", verifyToken, advertisingController.updateCategory);
 
-// Eliminar categoría
-router.delete("/:id", verifyToken, async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const { id } = req.params;
+// DELETE: Eliminar categoría (y sus archivos)
+router.delete("/category/:id", verifyToken, advertisingController.deleteCategory);
 
-    const [result] = await db.query(
-      "DELETE FROM advertising_categories WHERE category_id = ? AND user_id = ?",
-      [id, userId]
-    );
-    if (result.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "Categoría no encontrada o no pertenece al usuario" });
-    }
-    res.status(200).json({ message: "Categoría eliminada con éxito" });
-  } catch (error) {
-    console.error("Error al eliminar categoría:", error);
-    res.status(500).json({ message: "Error al eliminar categoría" });
-  }
-});
+// POST: Subir múltiples archivos (imágenes/videos)
+router.post("/upload", verifyToken, upload.array("files"), advertisingController.uploadFiles);
+
+// DELETE: Eliminar un archivo específico
+router.delete("/file/:file_id", verifyToken, advertisingController.deleteFile);
 
 module.exports = router;

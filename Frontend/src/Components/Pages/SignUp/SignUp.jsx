@@ -1,55 +1,56 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Importamos useNavigate
-import logo from "../../../assets/Logo.png"; // Importación del logo
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import logo from "../../../assets/Logo.png";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState(""); // Estado para el rol
+  const [role, setRole] = useState("");
+  const [adminCode, setAdminCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdminNotified, setIsAdminNotified] = useState(false); // Notificación para admin
-  const [error, setError] = useState(""); // Estado para manejar errores
-  const [successMessage, setSuccessMessage] = useState(""); // Estado para el mensaje de éxito
-  const navigate = useNavigate(); // Hook para redirigir
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccessMessage("");
 
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden. Por favor, inténtalo de nuevo.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
-    setError("");
-    setIsLoading(true);
+    // Si rol es admin, exige que se ingrese un código
+    if (role === "admin" && adminCode.trim() === "") {
+      setError("Debes ingresar el código de autorización para admin.");
+      return;
+    }
 
+    setIsLoading(true);
     try {
       const response = await axios.post("http://localhost:5000/api/signup", {
         email,
         password,
         name: email.split("@")[0],
         role,
+        adminCode: role === "admin" ? adminCode : undefined,
       });
 
       setIsLoading(false);
       setSuccessMessage(response.data.message);
-      setError("");
 
-      if (role === "admin") {
-        setIsAdminNotified(true);
-      }
-
-      // Redirigir a login después de un registro exitoso
+      // Espera 5 segundos y redirige a login
       setTimeout(() => {
         navigate("/login");
-      }, 2000); // Espera 2 segundos antes de redirigir
-
-    } catch (error) {
+      }, 5000);
+    } catch (err) {
       setIsLoading(false);
-      if (error.response) {
-        setError(error.response.data.message || "Hubo un error en el registro.");
+      if (err.response) {
+        setError(err.response.data.message || "Error en el registro.");
       } else {
         setError("Error de conexión con el servidor.");
       }
@@ -62,16 +63,21 @@ const SignUp = () => {
         <div className="text-center mb-6">
           <img src={logo} alt="Logo de la empresa" className="w-20 h-20 mx-auto" />
         </div>
-        <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">Crear Cuenta</h2>
-        <p className="text-center text-gray-500 mb-6">Ingresa tus datos para registrarte.</p>
+        <h2 className="text-2xl font-bold text-center mb-4 text-gray-800">
+          Crear Cuenta
+        </h2>
+        <p className="text-center text-gray-500 mb-6">
+          Ingresa tus datos para registrarte.
+        </p>
+
         <form onSubmit={handleSubmit}>
+          {/* Email */}
           <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+            <label className="block text-sm font-semibold text-gray-700">
               Correo electrónico
             </label>
             <input
               type="email"
-              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -80,13 +86,13 @@ const SignUp = () => {
             />
           </div>
 
+          {/* Password */}
           <div className="mb-4">
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+            <label className="block text-sm font-semibold text-gray-700">
               Contraseña
             </label>
             <input
               type="password"
-              id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -95,30 +101,27 @@ const SignUp = () => {
             />
           </div>
 
+          {/* Confirm Password */}
           <div className="mb-4">
-            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700">
+            <label className="block text-sm font-semibold text-gray-700">
               Confirmar Contraseña
             </label>
             <input
               type="password"
-              id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full p-3 border ${
-                error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-red-500"
-              } rounded-lg focus:outline-none`}
-              placeholder="Confirma tu contraseña"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Repite tu contraseña"
               required
             />
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </div>
 
+          {/* Rol */}
           <div className="mb-4">
-            <label htmlFor="role" className="block text-sm font-semibold text-gray-700">
+            <label className="block text-sm font-semibold text-gray-700">
               Rol
             </label>
             <select
-              id="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -130,26 +133,60 @@ const SignUp = () => {
             </select>
           </div>
 
-          {isAdminNotified && role === "admin" && (
-            <div className="mb-4 text-center text-sm text-red-500">
-              Este rol requiere autorización. Serás notificado cuando se apruebe.
+          {/* Código Admin */}
+          {role === "admin" && (
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700">
+                Código de Autorización (Admin)
+              </label>
+              <input
+                type="text"
+                value={adminCode}
+                onChange={(e) => setAdminCode(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Ingresa el código de autorización"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Si no lo tienes, se enviará una solicitud al administrador.
+              </p>
             </div>
           )}
 
+          {/* Mensajes */}
+          {error && (
+            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          )}
           {successMessage && (
-            <div className="mb-4 text-center text-sm text-green-500">{successMessage}</div>
+            <p className="text-green-500 text-sm mb-4 text-center">
+              {successMessage}
+            </p>
           )}
 
+          {/* Botón */}
           <div className="mb-4">
             <button
               type="submit"
-              className="w-full bg-red-500 text-white p-3 rounded-lg font-semibold hover:bg-red-600 focus:outline-none"
               disabled={isLoading}
+              className="w-full bg-red-500 text-white p-3 rounded-lg font-semibold hover:bg-red-600 focus:outline-none"
             >
               {isLoading ? "Cargando..." : "Crear Cuenta"}
             </button>
           </div>
         </form>
+
+        {/* ¿Ya tienes cuenta? */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-600">
+            ¿Ya tienes una cuenta?{" "}
+            <span
+              onClick={() => navigate("/login")}
+              className="text-red-500 hover:underline cursor-pointer"
+            >
+              Inicia sesión
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );
