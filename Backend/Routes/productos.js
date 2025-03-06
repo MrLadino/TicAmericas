@@ -5,17 +5,17 @@ const router = express.Router();
 const productosController = require("../Controllers/productosController");
 const { verifyToken, verifyAdmin } = require("../Middlewares/authMiddleware");
 
-// RUTAS DE CATEGORÍAS
+// CATEGORÍAS
 router.get("/categorias", verifyToken, productosController.getCategorias);
 router.post("/categorias", verifyToken, productosController.createCategoria);
 router.put("/categorias/:id", verifyToken, productosController.updateCategoria);
 router.delete("/categorias/:id", verifyToken, productosController.deleteCategoria);
 
-// RUTAS PARA EXCEL (export e import)
+// EXCEL
 router.get("/export-excel", verifyToken, productosController.exportExcel);
 router.post("/import-excel", verifyToken, productosController.importExcel);
 
-// RUTAS DE PRODUCTOS
+// PRODUCTOS
 router.get("/", verifyToken, productosController.getProductos);
 router.get("/:id", verifyToken, productosController.getProductoById);
 router.post("/", verifyToken, productosController.createProducto);

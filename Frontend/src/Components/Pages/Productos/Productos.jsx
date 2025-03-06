@@ -16,7 +16,6 @@ import {
 } from "./PdtsLogica";
 import { useAuth } from "../../../Context/AuthContext";
 
-// Estilo para animar el input de búsqueda (shake)
 const inputShakeStyle = `
   focus:animate-[shake_0.3s_ease-in-out_1]
   @keyframes shake {
@@ -30,35 +29,43 @@ const Productos = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
-  // ESTADOS PRINCIPALES
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(isAdmin ? "sin_categorias" : "General");
   const [busqueda, setBusqueda] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activos");
 
-  // Modal / Formularios (solo admin)
   const [mostrarModal, setMostrarModal] = useState(false);
-  const [modoEdicion, setModoEdicion] = useState(""); // "agregar" o "editar"
+  const [modoEdicion, setModoEdicion] = useState("");
   const [productoEnEdicion, setProductoEnEdicion] = useState(null);
 
-  // Edición de categorías (solo admin)
   const [editandoCategoria, setEditandoCategoria] = useState(false);
   const [categoriaEnEdicion, setCategoriaEnEdicion] = useState(null);
   const [nuevoNombreCategoria, setNuevoNombreCategoria] = useState("");
 
-  // Notificaciones
   const [notificacion, setNotificacion] = useState(null);
   const mostrarNotificacion = (mensaje, tipo = "info") => {
     setNotificacion({ mensaje, tipo });
     setTimeout(() => setNotificacion(null), 3000);
   };
 
-  // Modal para archivo Excel (solo admin)
   const [mostrarModalArchivo, setMostrarModalArchivo] = useState(false);
   const [archivoExcel, setArchivoExcel] = useState(null);
 
-  // CARGA INICIAL: productos y categorías
+  const [confirmacion, setConfirmacion] = useState(null);
+  const mostrarConfirmacion = (mensaje, onConfirm) => {
+    setConfirmacion({ mensaje, onConfirm });
+  };
+  const cerrarConfirmacion = () => {
+    setConfirmacion(null);
+  };
+  const aceptarConfirmacion = () => {
+    if (confirmacion && confirmacion.onConfirm) {
+      confirmacion.onConfirm();
+    }
+    setConfirmacion(null);
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -77,11 +84,7 @@ const Productos = () => {
           name: cat.name || "",
         }));
         setCategorias(cats);
-        if (!isAdmin) {
-          setCategoriaSeleccionada("General");
-        } else {
-          setCategoriaSeleccionada("sin_categorias");
-        }
+        setCategoriaSeleccionada(isAdmin ? "sin_categorias" : "General");
       })
       .catch((err) => {
         console.error("Error al obtener categorías:", err);
@@ -90,14 +93,14 @@ const Productos = () => {
       });
   }, [isAdmin]);
 
-  // FILTRADO de productos (local)
+  // Filtrado de productos
   const productosFiltrados = filtrarProductosPorCategoria(productos, categoriaSeleccionada);
   const productosFiltradosEstado = isAdmin
     ? filtrarProductosPorEstado(productosFiltrados, estadoFiltro)
     : productosFiltrados;
   const productosCoincidentes = filtrarProductosPorNombre(productosFiltradosEstado, busqueda);
 
-  // FUNCIONES CRUD (solo para admin)
+  // CRUD Productos
   const handleAgregarProducto = async (nuevo) => {
     if (
       !nuevo.sku?.trim() ||
@@ -109,10 +112,7 @@ const Productos = () => {
       nuevo.stock < 0 ||
       !nuevo.categoria?.trim()
     ) {
-      mostrarNotificacion(
-        "Completa los campos obligatorios (SKU, nombre, descripción, precio y stock) y selecciona una categoría.",
-        "error"
-      );
+      mostrarNotificacion("Completa los campos obligatorios y selecciona una categoría.", "error");
       return;
     }
     const token = localStorage.getItem("token");
@@ -128,12 +128,7 @@ const Productos = () => {
   };
 
   const handleEditarProducto = async (prodEdit) => {
-    if (
-      !prodEdit.nombre?.trim() ||
-      isNaN(prodEdit.precio) ||
-      prodEdit.precio <= 0 ||
-      !prodEdit.categoria
-    ) {
+    if (!prodEdit.nombre?.trim() || isNaN(prodEdit.precio) || prodEdit.precio <= 0 || !prodEdit.categoria) {
       mostrarNotificacion("Completa todos los campos correctamente.", "error");
       return;
     }
@@ -176,7 +171,7 @@ const Productos = () => {
     }
   };
 
-  // MANEJO DE CATEGORÍAS (solo para admin)
+  // CRUD Categorías
   const handleAgregarCategoria = async (nombre) => {
     const categoriaLimpia = nombre.trim();
     if (!categoriaLimpia) {
@@ -192,9 +187,7 @@ const Productos = () => {
         name: cat.name || "",
       }));
       setCategorias(cats);
-      if (!categoriaSeleccionada) {
-        setCategoriaSeleccionada(catData.name);
-      }
+      if (!categoriaSeleccionada) setCategoriaSeleccionada(catData.name);
       setMostrarModal(false);
       mostrarNotificacion("Categoría agregada correctamente.", "success");
     } catch (error) {
@@ -210,17 +203,14 @@ const Productos = () => {
     const token = localStorage.getItem("token");
     try {
       await updateCategoriaInDB(categoriaEnEdicion.id, nuevoNombreCategoria.trim(), token);
-      // Actualizamos tanto los productos como las categorías localmente:
-      const { productosActualizados, categoriasActualizadas } =
-        editarCategoriaYActualizarProductos(
-          productos,
-          categorias,
-          categoriaEnEdicion.name,
-          nuevoNombreCategoria.trim()
-        );
+      const { productosActualizados, categoriasActualizadas } = editarCategoriaYActualizarProductos(
+        productos,
+        categorias,
+        categoriaEnEdicion.name,
+        nuevoNombreCategoria.trim()
+      );
       setProductos(productosActualizados);
       setCategorias(categoriasActualizadas);
-      // Si la categoría actualmente seleccionada es la que se editó, actualizamos su nombre:
       if (categoriaSeleccionada.toLowerCase() === categoriaEnEdicion.name.toLowerCase()) {
         setCategoriaSeleccionada(nuevoNombreCategoria.trim());
       }
@@ -253,10 +243,10 @@ const Productos = () => {
     }
   };
 
-  // BÚSQUEDA LOCAL
+  // Búsqueda local
   const manejarBusqueda = (e) => setBusqueda(e.target.value);
 
-  // ABRIR/CERRAR MODALES
+  // Abrir/Cerrar modales
   const abrirModalProducto = (modo, producto = null) => {
     setEditandoCategoria(false);
     setModoEdicion(modo);
@@ -271,7 +261,7 @@ const Productos = () => {
         stock: 0,
         categoria: categoriaSeleccionada || "",
         activo: true,
-        qrCode: "",
+        codigo_barras: ""
       }
     );
     setMostrarModal(true);
@@ -297,7 +287,7 @@ const Productos = () => {
     setNuevoNombreCategoria("");
   };
 
-  // FUNCIONALIDADES EXCEL
+  // Excel
   const descargarExcel = () => {
     const token = localStorage.getItem("token");
     window.open(`http://localhost:5000/api/productos/export-excel?token=${token}`, "_blank");
@@ -391,9 +381,10 @@ const Productos = () => {
         </div>
       )}
 
-      {/* CONTENEDOR DE FILTROS */}
       {isAdmin ? (
-        <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-red-700 mb-8">
+        // UN SOLO contenedor que agrupa SELECTs + BÚSQUEDA + BOTONES
+        <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-red-700 mb-8 transform hover:scale-105 transition duration-300">
+          {/* Fila: seleccionar categoría y estado, + Botones de categoría */}
           <div className="flex flex-col lg:flex-row items-center justify-around space-y-4 lg:space-y-0 lg:space-x-6">
             <select
               value={categoriaSeleccionada}
@@ -435,8 +426,39 @@ const Productos = () => {
               )}
             </div>
           </div>
+
+          {/* Fila: búsqueda, botones de producto y texto de estado */}
+          <div className="mt-6 flex flex-col items-center space-y-4">
+            <div className="relative w-full md:w-3/4 lg:w-1/2">
+              <input
+                type="text"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar producto..."
+                className={`p-3 border rounded w-full text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 transition ${inputShakeStyle}`}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => abrirModalProducto("agregar")}
+                className="bg-red-700 text-white py-2 px-6 rounded-lg hover:bg-red-800 text-sm transition"
+              >
+                Agregar producto
+              </button>
+              <button
+                onClick={abrirModalArchivo}
+                className="bg-blue-700 text-white py-2 px-6 rounded-lg hover:bg-blue-800 text-sm transition"
+              >
+                Agregar por archivo
+              </button>
+            </div>
+            <p className="text-red-800 font-semibold">
+              Mostrando productos {estadoFiltro.toUpperCase()}
+            </p>
+          </div>
         </div>
       ) : (
+        // Si NO es admin, mostramos solo la parte de seleccionar categoría + búsqueda
         <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-red-700 mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-around">
             <select
@@ -462,39 +484,7 @@ const Productos = () => {
         </div>
       )}
 
-      {/* BARRA DE BÚSQUEDA ADICIONAL Y BOTONES (ADMIN) */}
-      {isAdmin && (
-        <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-red-700 mb-8 flex flex-col items-center space-y-4 transform hover:scale-105 transition duration-300">
-          <div className="relative w-full md:w-3/4 lg:w-1/2">
-            <input
-              type="text"
-              value={busqueda}
-              onChange={manejarBusqueda}
-              placeholder="Buscar producto..."
-              className={`p-3 border rounded w-full text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 transition ${inputShakeStyle}`}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <button
-              onClick={() => abrirModalProducto("agregar")}
-              className="bg-red-700 text-white py-2 px-6 rounded-lg hover:bg-red-800 text-sm transition"
-            >
-              Agregar producto
-            </button>
-            <button
-              onClick={abrirModalArchivo}
-              className="bg-blue-700 text-white py-2 px-6 rounded-lg hover:bg-blue-800 text-sm transition"
-            >
-              Agregar por archivo
-            </button>
-          </div>
-          <p className="text-red-800 font-semibold">
-            Mostrando productos {estadoFiltro.toUpperCase()}
-          </p>
-        </div>
-      )}
-
-      {/* CONTENEDOR DE LA TABLA */}
+      {/* TABLA DE PRODUCTOS */}
       <div className="max-h-[500px] overflow-y-auto overflow-x-hidden shadow-2xl rounded-2xl">
         <table className="w-full table-fixed border-collapse bg-white rounded-2xl">
           <thead className="bg-red-800 text-white sticky top-0">
@@ -547,7 +537,9 @@ const Productos = () => {
                   </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">{prod.stock}</td>
-                <td className="px-4 py-3 whitespace-nowrap">${Number(prod.precio).toFixed(2)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  ${Number(prod.precio).toFixed(2)}
+                </td>
                 {isAdmin && (
                   <td className="px-4 py-3 whitespace-nowrap">
                     <button
@@ -569,16 +561,44 @@ const Productos = () => {
         </table>
       </div>
 
-      {/* MODAL (Producto o Categoría) - Solo para admin */}
+      {/* MODAL DE CONFIRMACIÓN PERSONALIZADA */}
+      {confirmacion && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl transform transition duration-300">
+            <h3 className="text-2xl font-semibold mb-4 text-red-700">TIC Americas</h3>
+            <p className="text-gray-700 mb-6">{confirmacion.mensaje}</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={cerrarConfirmacion}
+                className="bg-gray-500 text-black py-2 px-4 rounded-lg hover:bg-gray-600 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={aceptarConfirmacion}
+                className="bg-red-700 text-white py-2 px-4 rounded-lg hover:bg-red-800 transition"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL (Producto o Categoría) */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
           <div className="bg-white p-6 rounded-xl w-96 shadow-2xl max-h-[90vh] overflow-y-auto transform hover:scale-105 transition duration-300">
             {editandoCategoria ? (
               <>
                 {modoEdicion === "agregar" ? (
-                  <h3 className="text-2xl font-semibold mb-4 text-red-700">Agregar Categoría</h3>
+                  <h3 className="text-2xl font-semibold mb-4 text-red-700">
+                    Agregar Categoría
+                  </h3>
                 ) : (
-                  <h3 className="text-2xl font-semibold mb-4 text-red-700">Editar Categoría</h3>
+                  <h3 className="text-2xl font-semibold mb-4 text-red-700">
+                    Editar Categoría
+                  </h3>
                 )}
                 <label className="block mb-2 text-sm font-semibold text-black">
                   Nombre de la categoría
@@ -624,9 +644,13 @@ const Productos = () => {
             ) : (
               <>
                 {modoEdicion === "agregar" ? (
-                  <h3 className="text-2xl font-semibold mb-4 text-red-700">Agregar Producto</h3>
+                  <h3 className="text-2xl font-semibold mb-4 text-red-700">
+                    Agregar Producto
+                  </h3>
                 ) : (
-                  <h3 className="text-2xl font-semibold mb-4 text-red-700">Editar Producto</h3>
+                  <h3 className="text-2xl font-semibold mb-4 text-red-700">
+                    Editar Producto
+                  </h3>
                 )}
                 <label className="block mb-2 text-sm font-semibold text-black">
                   Nombre del producto
@@ -635,7 +659,10 @@ const Productos = () => {
                   type="text"
                   value={productoEnEdicion?.nombre || ""}
                   onChange={(e) =>
-                    setProductoEnEdicion({ ...productoEnEdicion, nombre: e.target.value })
+                    setProductoEnEdicion({
+                      ...productoEnEdicion,
+                      nombre: e.target.value
+                    })
                   }
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
                 />
@@ -646,7 +673,10 @@ const Productos = () => {
                   type="text"
                   value={productoEnEdicion?.descripcion || ""}
                   onChange={(e) =>
-                    setProductoEnEdicion({ ...productoEnEdicion, descripcion: e.target.value })
+                    setProductoEnEdicion({
+                      ...productoEnEdicion,
+                      descripcion: e.target.value
+                    })
                   }
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
                 />
@@ -659,7 +689,7 @@ const Productos = () => {
                   onChange={(e) =>
                     setProductoEnEdicion({
                       ...productoEnEdicion,
-                      stock: parseInt(e.target.value) || 0,
+                      stock: parseInt(e.target.value) || 0
                     })
                   }
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
@@ -673,7 +703,7 @@ const Productos = () => {
                   onChange={(e) =>
                     setProductoEnEdicion({
                       ...productoEnEdicion,
-                      precio: parseFloat(e.target.value) || 0,
+                      precio: parseFloat(e.target.value) || 0
                     })
                   }
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
@@ -687,10 +717,25 @@ const Productos = () => {
                   onChange={(e) =>
                     setProductoEnEdicion({
                       ...productoEnEdicion,
-                      sku: e.target.value.substring(0, 5),
+                      sku: e.target.value.substring(0, 5)
                     })
                   }
                   maxLength={5}
+                  className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
+                />
+                <label className="block mb-2 text-sm font-semibold text-black">
+                  Código de Barras
+                </label>
+                <input
+                  type="text"
+                  onFocus={(e) => e.target.select()}
+                  value={productoEnEdicion?.codigo_barras || ""}
+                  onChange={(e) =>
+                    setProductoEnEdicion({
+                      ...productoEnEdicion,
+                      codigo_barras: e.target.value
+                    })
+                  }
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
                 />
                 <label className="block mb-2 text-sm font-semibold text-black">
@@ -706,7 +751,7 @@ const Productos = () => {
                       reader.onloadend = () =>
                         setProductoEnEdicion({
                           ...productoEnEdicion,
-                          imagen: reader.result,
+                          imagen: reader.result
                         });
                       reader.readAsDataURL(file);
                     }
@@ -720,14 +765,6 @@ const Productos = () => {
                     className="w-32 h-32 object-cover mt-2 mx-auto rounded"
                   />
                 )}
-                <label className="block mb-2 text-sm font-semibold text-black">
-                  Código QR (pendiente)
-                </label>
-                <div className="p-3 border mb-4 w-full rounded text-gray-500 text-sm">
-                  {productoEnEdicion?.qrCode
-                    ? `QR: ${productoEnEdicion.qrCode}`
-                    : "Aún sin QR"}
-                </div>
                 <div className="flex flex-wrap justify-end gap-2 mt-4">
                   {modoEdicion === "editar" && (
                     <>
@@ -773,11 +810,13 @@ const Productos = () => {
         </div>
       )}
 
-      {/* Modal para archivo Excel */}
+      {/* MODAL PARA ARCHIVO EXCEL */}
       {mostrarModalArchivo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
           <div className="bg-white p-6 rounded-xl w-96 shadow-2xl transform hover:scale-105 transition duration-300">
-            <h3 className="text-2xl font-semibold mb-4 text-red-700">Agregar por archivo</h3>
+            <h3 className="text-2xl font-semibold mb-4 text-red-700">
+              Agregar por archivo
+            </h3>
             <div className="mb-6">
               <p className="text-sm text-gray-700 mb-2">
                 Descarga un Excel con la lista de productos o sube un archivo Excel para importarlos.
