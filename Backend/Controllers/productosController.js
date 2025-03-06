@@ -274,11 +274,10 @@ exports.deleteProducto = async (req, res) => {
   }
 };
 
-// ============== EXPORTAR EXCEL ==============
+// ============== EXPORTAR EXCEL (8 COLUMNAS) ==============
 exports.exportExcel = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    // Consulta solo las columnas que queremos exportar
     const [productos] = await db.query(
       `SELECT
          p.sku,
@@ -300,7 +299,7 @@ exports.exportExcel = async (req, res) => {
       properties: { defaultRowHeight: 60 },
     });
 
-    // Solo las 8 columnas solicitadas
+    // Solo las columnas solicitadas
     worksheet.columns = [
       { header: "SKU",           key: "sku",           width: 12 },
       { header: "NOMBRE",        key: "nombre",        width: 20 },
@@ -315,13 +314,12 @@ exports.exportExcel = async (req, res) => {
 
     if (productos.length > 0) {
       for (const p of productos) {
-        // Convertir true/false a "V" o "X"
         const activoTexto = p.activo ? "V" : "X";
         const row = worksheet.addRow({
           sku: p.sku,
           nombre: p.nombre,
           descripcion: p.descripcion,
-          imagen_col: "", // Se usará para insertar la imagen
+          imagen_col: "",
           precio: p.precio,
           activo: activoTexto,
           codigo_barras: p.codigo_barras || "",
@@ -329,7 +327,6 @@ exports.exportExcel = async (req, res) => {
         });
         row.height = 70;
 
-        // Si hay imagen base64, la insertamos
         if (p.imagen) {
           let base64Data = p.imagen;
           let extension = "png";
@@ -342,9 +339,8 @@ exports.exportExcel = async (req, res) => {
             base64: base64Data,
             extension,
           });
-          // Insertamos la imagen en la columna "IMAGEN" (col 4, índice base 0 => col: 3)
-          // Ajusta la posición según tu preferencia
           const rowIndex = row.number;
+          // Insertamos la imagen en la columna "IMAGEN" (col 4)
           worksheet.addImage(imageId, {
             tl: { col: 3, row: rowIndex - 1 },
             ext: { width: 60, height: 60 },
@@ -380,7 +376,7 @@ exports.exportExcel = async (req, res) => {
   }
 };
 
-// ========== IMPORTAR EXCEL ==========
+// ========== IMPORTAR EXCEL CORREGIDO ==========
 exports.importExcel = (req, res) => {
   const uploadExcel = multer({ storage: multer.memoryStorage() }).single("excel");
   uploadExcel(req, res, async (err) => {
@@ -392,6 +388,7 @@ exports.importExcel = (req, res) => {
       if (!req.file) {
         return res.status(400).json({ message: "No se recibió ningún archivo Excel" });
       }
+      // Categoría a la que se importan los productos (o "Impresoras" por defecto)
       const categoryName = req.body.categoryName || "Impresoras";
       let categoria_id;
       const [catRes] = await db.query(
@@ -399,7 +396,7 @@ exports.importExcel = (req, res) => {
         [categoryName, userId]
       );
       if (catRes.length === 0) {
-        // Si no existe la categoría, la creamos
+        // Crear categoría si no existe
         const [result] = await db.query(
           "INSERT INTO product_categories (name, user_id) VALUES (?, ?)",
           [categoryName, userId]
@@ -414,13 +411,20 @@ exports.importExcel = (req, res) => {
       const worksheet = workbook.worksheets[0];
       const rows = [];
 
-      // Ajusta según tu plantilla
-      // (Ejemplo: 7 columnas: ID, SKU, Nombre, Descripción, Código Qr, Stock, Precio)
+      // El Excel tiene 7 columnas en este orden:
+      // 1) ID (IGNORAR, el sistema genera su propio id)
+      // 2) SKU
+      // 3) Nombre
+      // 4) Descripción
+      // 5) Codigo Qr
+      // 6) Stock
+      // 7) Precio
+
       worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
         if (rowNumber === 1) return; // saltar encabezado
         const vals = row.values;
 
-        // Ajusta índices según tu template
+        // ID => vals[1] (ignorado)
         const rawSKU         = vals[2] || "";
         const rawNombre      = vals[3] || "";
         const rawDescripcion = vals[4] || "";
@@ -428,8 +432,12 @@ exports.importExcel = (req, res) => {
         let   rawStock       = vals[6] || 0;
         let   rawPrecio      = vals[7] || 0;
 
-        const finalStock  = parseInt(String(rawStock).replace(/[^0-9]/g, ""), 10) || 0;
-        const finalPrecio = parseFloat(String(rawPrecio).replace(/[^0-9.]/g, "")) || 0;
+        // Convertir stock a entero
+        const finalStock = parseInt(String(rawStock).replace(/[^0-9]/g, ""), 10) || 0;
+
+        // Convertir precio, quitando $, espacios, etc. Conservamos decimales
+        const priceStr   = String(rawPrecio).replace(/[^0-9.]/g, "");
+        const finalPrecio = parseFloat(priceStr) || 0;
 
         rows.push({
           sku: String(rawSKU).trim(),
@@ -438,23 +446,29 @@ exports.importExcel = (req, res) => {
           codigo_barras: String(rawCodigo).replace(/[^0-9]/g, ""),
           stock: finalStock,
           precio: finalPrecio,
-          activo: 0,
-          imagen: null,
+          activo: 0,     // Inactivo por defecto
+          imagen: null,  // Se edita luego manualmente
         });
       });
 
       let insertCount = 0;
       for (const data of rows) {
+        // Saltar si no hay nombre
         if (!data.nombre) continue;
 
-        // Evitar duplicados
+        // Evitar duplicados por nombre
         const [dup] = await db.query(
           "SELECT * FROM productos WHERE LOWER(nombre) = ? AND user_id = ?",
           [data.nombre.toLowerCase(), userId]
         );
-        if (dup.length > 0) continue;
+        if (dup.length > 0) {
+          // Ya existe => saltar
+          continue;
+        }
 
+        // Generar ID aleatorio
         const newId = generarIdCorto();
+        // Si el SKU viene vacío en el Excel, generar uno aleatorio
         const finalSku = data.sku ? data.sku : generarIdCorto();
 
         await db.query(

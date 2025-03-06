@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   filtrarProductosPorCategoria,
   filtrarProductosPorEstado,
-  filtrarProductosPorNombre,
+  // filtrarProductosPorNombre, <-- ya no lo usaremos
   getAllProductos,
   createProductoInDB,
   updateProductoInDB,
@@ -15,6 +15,17 @@ import {
   editarCategoriaYActualizarProductos
 } from "./PdtsLogica";
 import { useAuth } from "../../../Context/AuthContext";
+
+// ============== FUNCIÓN PARA FILTRO GLOBAL ==============
+// Busca en SKU o Nombre, sin importar la categoría ni el estado.
+function filtrarGlobal(productos, termino) {
+  if (!termino.trim()) return productos;
+  const lower = termino.toLowerCase();
+  return productos.filter((p) =>
+    p.sku.toLowerCase().includes(lower) ||
+    p.nombre.toLowerCase().includes(lower)
+  );
+}
 
 const inputShakeStyle = `
   focus:animate-[shake_0.3s_ease-in-out_1]
@@ -31,7 +42,9 @@ const Productos = () => {
 
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(isAdmin ? "sin_categorias" : "General");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(
+    isAdmin ? "sin_categorias" : "General"
+  );
   const [busqueda, setBusqueda] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activos");
 
@@ -43,15 +56,18 @@ const Productos = () => {
   const [categoriaEnEdicion, setCategoriaEnEdicion] = useState(null);
   const [nuevoNombreCategoria, setNuevoNombreCategoria] = useState("");
 
+  // ======= NOTIFICACIONES =======
   const [notificacion, setNotificacion] = useState(null);
   const mostrarNotificacion = (mensaje, tipo = "info") => {
     setNotificacion({ mensaje, tipo });
     setTimeout(() => setNotificacion(null), 3000);
   };
 
+  // ======= MODAL PARA ARCHIVO EXCEL =======
   const [mostrarModalArchivo, setMostrarModalArchivo] = useState(false);
   const [archivoExcel, setArchivoExcel] = useState(null);
 
+  // ======= ALERTA DE CONFIRMACIÓN PERSONALIZADA =======
   const [confirmacion, setConfirmacion] = useState(null);
   const mostrarConfirmacion = (mensaje, onConfirm) => {
     setConfirmacion({ mensaje, onConfirm });
@@ -66,6 +82,7 @@ const Productos = () => {
     setConfirmacion(null);
   };
 
+  // ======= CARGA INICIAL DE PRODUCTOS Y CATEGORÍAS =======
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -93,14 +110,21 @@ const Productos = () => {
       });
   }, [isAdmin]);
 
-  // Filtrado de productos
-  const productosFiltrados = filtrarProductosPorCategoria(productos, categoriaSeleccionada);
-  const productosFiltradosEstado = isAdmin
-    ? filtrarProductosPorEstado(productosFiltrados, estadoFiltro)
-    : productosFiltrados;
-  const productosCoincidentes = filtrarProductosPorNombre(productosFiltradosEstado, busqueda);
+  // ======= LÓGICA DE FILTRADO (GLOBAL vs NORMAL) =======
+  let productosCoincidentes;
+  if (busqueda.trim()) {
+    // Si hay algo en la barra de búsqueda => Filtro global (SKU o Nombre)
+    productosCoincidentes = filtrarGlobal(productos, busqueda);
+  } else {
+    // Si no hay texto en la búsqueda => se aplican filtros de categoría y estado
+    let filtrados = filtrarProductosPorCategoria(productos, categoriaSeleccionada);
+    if (isAdmin) {
+      filtrados = filtrarProductosPorEstado(filtrados, estadoFiltro);
+    }
+    productosCoincidentes = filtrados;
+  }
 
-  // CRUD Productos
+  // ======= CRUD PRODUCTOS =======
   const handleAgregarProducto = async (nuevo) => {
     if (
       !nuevo.sku?.trim() ||
@@ -112,7 +136,10 @@ const Productos = () => {
       nuevo.stock < 0 ||
       !nuevo.categoria?.trim()
     ) {
-      mostrarNotificacion("Completa los campos obligatorios y selecciona una categoría.", "error");
+      mostrarNotificacion(
+        "Completa los campos obligatorios y selecciona una categoría.",
+        "error"
+      );
       return;
     }
     const token = localStorage.getItem("token");
@@ -145,7 +172,6 @@ const Productos = () => {
   };
 
   const handleEliminarProductoEnModal = async (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar este producto?")) return;
     const token = localStorage.getItem("token");
     try {
       await deleteProductoInDB(id, token);
@@ -156,6 +182,13 @@ const Productos = () => {
     } catch (error) {
       mostrarNotificacion(error.message, "error");
     }
+  };
+
+  // Usamos la alerta personalizada en lugar de window.confirm
+  const confirmarEliminarProducto = (id) => {
+    mostrarConfirmacion("¿Estás seguro de eliminar este producto?", () =>
+      handleEliminarProductoEnModal(id)
+    );
   };
 
   const handleToggleEstadoEnModal = async (id) => {
@@ -171,7 +204,7 @@ const Productos = () => {
     }
   };
 
-  // CRUD Categorías
+  // ======= CRUD CATEGORÍAS =======
   const handleAgregarCategoria = async (nombre) => {
     const categoriaLimpia = nombre.trim();
     if (!categoriaLimpia) {
@@ -223,7 +256,6 @@ const Productos = () => {
 
   const handleEliminarCategoriaEnModal = async () => {
     if (!categoriaEnEdicion) return;
-    if (!window.confirm("¿Estás seguro de eliminar esta categoría?")) return;
     const token = localStorage.getItem("token");
     try {
       await deleteCategoriaInDB(categoriaEnEdicion.id, token);
@@ -241,6 +273,12 @@ const Productos = () => {
     } catch (error) {
       mostrarNotificacion(error.message, "error");
     }
+  };
+
+  const confirmarEliminarCategoria = () => {
+    mostrarConfirmacion("¿Estás seguro de eliminar esta categoría?", () =>
+      handleEliminarCategoriaEnModal()
+    );
   };
 
   // Búsqueda local
@@ -357,6 +395,30 @@ const Productos = () => {
           }`}
         >
           {notificacion.mensaje}
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN PERSONALIZADA */}
+      {confirmacion && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl transform transition duration-300">
+            <h3 className="text-2xl font-semibold mb-4 text-red-700">TIC Americas</h3>
+            <p className="text-gray-700 mb-6">{confirmacion.mensaje}</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={cerrarConfirmacion}
+                className="bg-gray-500 text-black py-2 px-4 rounded-lg hover:bg-gray-600 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={aceptarConfirmacion}
+                className="bg-red-700 text-white py-2 px-4 rounded-lg hover:bg-red-800 transition"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -561,30 +623,6 @@ const Productos = () => {
         </table>
       </div>
 
-      {/* MODAL DE CONFIRMACIÓN PERSONALIZADA */}
-      {confirmacion && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl transform transition duration-300">
-            <h3 className="text-2xl font-semibold mb-4 text-red-700">TIC Americas</h3>
-            <p className="text-gray-700 mb-6">{confirmacion.mensaje}</p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={cerrarConfirmacion}
-                className="bg-gray-500 text-black py-2 px-4 rounded-lg hover:bg-gray-600 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={aceptarConfirmacion}
-                className="bg-red-700 text-white py-2 px-4 rounded-lg hover:bg-red-800 transition"
-              >
-                Aceptar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL (Producto o Categoría) */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
@@ -612,7 +650,7 @@ const Productos = () => {
                 <div className="flex justify-end space-x-4">
                   {modoEdicion === "editar" && (
                     <button
-                      onClick={handleEliminarCategoriaEnModal}
+                      onClick={confirmarEliminarCategoria}
                       className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition"
                     >
                       Eliminar
@@ -775,7 +813,7 @@ const Productos = () => {
                         {productoEnEdicion?.activo ? "Inactivar" : "Activar"}
                       </button>
                       <button
-                        onClick={() => handleEliminarProductoEnModal(productoEnEdicion.id)}
+                        onClick={() => confirmarEliminarProducto(productoEnEdicion.id)}
                         className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition"
                       >
                         Eliminar
