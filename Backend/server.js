@@ -1,8 +1,6 @@
 // Backend/server.js
 
 const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const db = require("./Config/db");
@@ -14,8 +12,8 @@ const { verifyToken, verifyAdmin } = require("./Middlewares/authMiddleware");
 dotenv.config();
 
 const app = express();
-const router = express.Router();
 
+// Middlewares de parsing
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -44,6 +42,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Servir la carpeta /uploads como estático
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -53,7 +52,7 @@ app.use(
   express.static(uploadDir)
 );
 
-// Configuración de Multer para manejo de archivos
+// Configuración de Multer para manejo de archivos (imágenes, etc.)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -71,66 +70,20 @@ const fileFilter = (req, file, cb) => {
 };
 const upload = multer({ storage, fileFilter });
 
-// Rutas de autenticación y usuario usando el router
-router.post("/signup", async (req, res) => {
-  const { name, email, password, role } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "Nombre, email y contraseña son obligatorios." });
-  }
-  try {
-    const [existingUser] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ message: "El usuario ya está registrado." });
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = `INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`;
-    const values = [name, email, hashedPassword, role || "usuario"];
-    await db.query(sql, values);
-    res.status(201).json({ message: "Usuario registrado exitosamente." });
-  } catch (error) {
-    console.error("Error en el registro:", error);
-    res.status(500).json({ message: "Error en el servidor." });
-  }
-});
+// IMPORTAR el archivo user.js que define /signup y /login con la validación de rol
+const userRoutes = require("./Routes/user");
+// Montar esas rutas en /api
+app.use("/api", userRoutes);
 
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email y contraseña son obligatorios." });
-  }
-  try {
-    const [user] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-    if (user.length === 0) {
-      return res.status(400).json({ message: "Usuario no encontrado." });
-    }
-    const validPassword = await bcrypt.compare(password, user[0].password);
-    if (!validPassword) {
-      return res.status(400).json({ message: "Contraseña incorrecta." });
-    }
-    const token = jwt.sign(
-      { user_id: user[0].user_id, email: user[0].email, role: user[0].role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-    res.status(200).json({
-      message: "Login exitoso",
-      token,
-      user: {
-        user_id: user[0].user_id,
-        name: user[0].name,
-        email: user[0].email,
-        role: user[0].role,
-        phone: user[0].phone,
-        profile_photo: user[0].profile_photo,
-      },
-    });
-  } catch (error) {
-    console.error("Error en el login:", error);
-    res.status(500).json({ message: "Error en el servidor." });
-  }
-});
+// Ejemplo: Rutas adicionales (publicidad, productos, etc.)
+const advertisingRoutes = require("./Routes/advertising");
+app.use("/api/advertising", advertisingRoutes);
 
-router.get("/profile", verifyToken, async (req, res) => {
+const productosRoutes = require("./Routes/productos");
+app.use("/api/productos", productosRoutes);
+
+// Rutas relacionadas al perfil de usuario
+app.get("/api/profile", verifyToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
     const [result] = await db.query(
@@ -153,7 +106,7 @@ router.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-router.put("/profile", verifyToken, async (req, res) => {
+app.put("/api/profile", verifyToken, async (req, res) => {
   const {
     name,
     email,
@@ -195,7 +148,8 @@ router.put("/profile", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
+// Ejemplo de subir archivos/imágenes (con token)
+app.post("/api/upload", verifyToken, upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No se subió ninguna imagen." });
   }
@@ -210,16 +164,8 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   }
 });
 
-// Montar otras rutas (ejemplo: publicidad)
-const advertisingRoutes = require("./Routes/advertising");
-app.use("/api/advertising", advertisingRoutes);
-
-// Montar rutas de productos
-const productosRoutes = require("./Routes/productos");
-app.use("/api/productos", productosRoutes);
-
 // Rutas para administración de usuarios (ejemplo)
-router.get("/", verifyToken, verifyAdmin, async (req, res) => {
+app.get("/api/users", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const [users] = await db.query("SELECT user_id, name, email, role FROM users");
     res.json(users);
@@ -229,7 +175,7 @@ router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
+app.delete("/api/users/:id", verifyToken, verifyAdmin, async (req, res) => {
   const userId = req.params.id;
   if (req.user.user_id == userId) {
     return res.status(403).json({ message: "No puedes eliminar tu propia cuenta." });
@@ -247,9 +193,7 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// Montar el router en /api
-app.use("/api", router);
-
+// Iniciar el servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en el puerto ${PORT}`);

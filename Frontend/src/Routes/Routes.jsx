@@ -1,5 +1,3 @@
-// Frontend/src/Routes/Routes.jsx
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
@@ -25,49 +23,25 @@ const AppRoutes = () => {
   const { authenticated, loadingAuth, user } = useAuth();
   const isAdmin = user?.role === "admin";
 
+  // Mientras se cargan los datos de autenticación se muestra el loader
   if (loadingAuth) {
     return <FancyLoader />;
   }
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={authenticated ? <Navigate to="/home" /> : <Navigate to="/login" />}
-      />
+      <Route path="/" element={authenticated ? <Navigate to="/home" /> : <Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
-
-      {/* Recuperar Contraseña */}
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-
-      <Route
-        path="/home"
-        element={authenticated ? <Home /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/lector-dinamico"
-        element={authenticated ? <Caja /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/productos"
-        element={authenticated ? <Productos /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/profile"
-        element={authenticated ? <Profile /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/ayuda"
-        element={authenticated ? <Ayuda /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/programa"
-        element={authenticated ? <Programa /> : <Navigate to="/login" />}
-      />
-
-      {/* Ruta de Publicidad: solo admin. Si no es admin => va a /programa */}
+      <Route path="/home" element={authenticated ? <Home /> : <Navigate to="/login" />} />
+      <Route path="/lector-dinamico" element={authenticated ? <Caja /> : <Navigate to="/login" />} />
+      <Route path="/productos" element={authenticated ? <Productos /> : <Navigate to="/login" />} />
+      <Route path="/profile" element={authenticated ? <Profile /> : <Navigate to="/login" />} />
+      <Route path="/ayuda" element={authenticated ? <Ayuda /> : <Navigate to="/login" />} />
+      <Route path="/programa" element={authenticated ? <Programa /> : <Navigate to="/login" />} />
+      {/* Ruta de publicidad: solo admin; si no, redirige a /programa */}
       <Route
         path="/lector-estatico"
         element={
@@ -76,7 +50,6 @@ const AppRoutes = () => {
             : <Navigate to="/login" />
         }
       />
-
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );

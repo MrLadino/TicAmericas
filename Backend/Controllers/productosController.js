@@ -7,7 +7,8 @@ function generarIdCorto() {
   return String(Math.floor(10000 + Math.random() * 90000));
 }
 
-// ============== CATEGORÍAS ==============
+// =================== CATEGORÍAS ===================
+
 exports.getCategorias = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -32,13 +33,8 @@ exports.createCategoria = async (req, res) => {
       "INSERT INTO product_categories (name, user_id) VALUES (?, ?)",
       [name, userId]
     );
-    return res.json({ message: "OK", id: result.insertId, name });
+    return res.json({ message: "Categoría creada con éxito.", id: result.insertId, name });
   } catch (error) {
-    if (error.code === "ER_DUP_ENTRY") {
-      return res.status(400).json({
-        message: "Ya existe una categoría con ese nombre para tu usuario",
-      });
-    }
     return res.status(500).json({ message: "Error al crear categoría", error });
   }
 };
@@ -48,29 +44,18 @@ exports.updateCategoria = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
   if (!name) {
-    return res.status(400).json({ message: "El nuevo nombre es obligatorio." });
+    return res.status(400).json({ message: "El nombre es obligatorio." });
   }
   try {
-    const [rows] = await db.query(
-      "SELECT * FROM product_categories WHERE category_id = ? AND user_id = ?",
-      [id, userId]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({
-        message: "Categoría no encontrada o no pertenece al usuario",
-      });
-    }
-    await db.query(
+    const [result] = await db.query(
       "UPDATE product_categories SET name = ? WHERE category_id = ? AND user_id = ?",
       [name, id, userId]
     );
-    return res.json({ message: "OK", id, name });
-  } catch (error) {
-    if (error.code === "ER_DUP_ENTRY") {
-      return res.status(400).json({
-        message: "Ya existe una categoría con ese nombre para tu usuario",
-      });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Categoría no encontrada." });
     }
+    return res.json({ message: "Categoría actualizada con éxito." });
+  } catch (error) {
     return res.status(500).json({ message: "Error al actualizar categoría", error });
   }
 };
@@ -79,46 +64,58 @@ exports.deleteCategoria = async (req, res) => {
   const userId = req.user.user_id;
   const { id } = req.params;
   try {
-    const [rows] = await db.query(
-      "SELECT * FROM product_categories WHERE category_id = ? AND user_id = ?",
+    const [productos] = await db.query(
+      "SELECT id FROM productos WHERE categoria_id = ? AND user_id = ?",
       [id, userId]
     );
-    if (rows.length === 0) {
-      return res.status(404).json({
-        message: "Categoría no encontrada o no pertenece al usuario",
-      });
+    if (productos.length > 0) {
+      return res.status(400).json({ message: "No se puede eliminar la categoría porque tiene productos asociados." });
     }
-    await db.query(
-      "DELETE FROM product_categories WHERE category_id = ? AND user_id = ?",
-      [id, userId]
-    );
-    return res.json({ message: "OK", id });
+    await db.query("DELETE FROM product_categories WHERE category_id = ? AND user_id = ?", [id, userId]);
+    return res.json({ message: "Categoría eliminada con éxito." });
   } catch (error) {
     return res.status(500).json({ message: "Error al eliminar categoría", error });
   }
 };
 
-// ============== PRODUCTOS ==============
+// =================== PRODUCTOS ===================
+
+exports.createProducto = async (req, res) => {
+  let { sku, nombre, descripcion, imagen, precio, stock, categoria, activo, codigo_barras } = req.body;
+  try {
+    const userId = req.user.user_id;
+    const id = generarIdCorto();
+
+    if (!categoria) {
+      return res.status(400).json({ message: "No hay categoría para este producto" });
+    }
+
+    const [catResult] = await db.query(
+      "SELECT category_id FROM product_categories WHERE name = ? AND user_id = ?",
+      [categoria, userId]
+    );
+    if (catResult.length === 0) {
+      return res.status(400).json({ message: "La categoría no existe. Crea la categoría primero." });
+    }
+    const categoria_id = catResult[0].category_id;
+    precio = precio ? Number(precio) : 0;
+
+    await db.query(
+      `INSERT INTO productos (id, user_id, sku, nombre, descripcion, imagen, precio, stock, categoria_id, activo, codigo_barras)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, userId, sku || "", nombre || "", descripcion || "", imagen || null, precio, stock || 0, categoria_id, activo ?? 1, codigo_barras || ""]
+    );
+
+    return res.json({ message: "Producto creado con éxito." });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al crear producto", error });
+  }
+};
+
 exports.getProductos = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const [productos] = await db.query(
-      `SELECT 
-         p.id,
-         p.sku,
-         p.nombre,
-         p.descripcion,
-         p.imagen,
-         p.precio,
-         p.stock,
-         p.activo,
-         p.codigo_barras,
-         pc.name AS categoria
-       FROM productos p
-       LEFT JOIN product_categories pc ON p.categoria_id = pc.category_id
-       WHERE p.user_id = ?`,
-      [userId]
-    );
+    const [productos] = await db.query("SELECT * FROM productos WHERE user_id = ?", [userId]);
     return res.json(productos);
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener productos", error });
@@ -127,134 +124,51 @@ exports.getProductos = async (req, res) => {
 
 exports.getProductoById = async (req, res) => {
   const { id } = req.params;
+  const userId = req.user.user_id;
   try {
-    const userId = req.user.user_id;
-    const [producto] = await db.query(
-      `SELECT 
-         p.id,
-         p.sku,
-         p.nombre,
-         p.descripcion,
-         p.imagen,
-         p.precio,
-         p.stock,
-         p.activo,
-         p.codigo_barras,
-         pc.name AS categoria
-       FROM productos p
-       LEFT JOIN product_categories pc ON p.categoria_id = pc.category_id
-       WHERE p.id = ? AND p.user_id = ?`,
-      [id, userId]
-    );
-    if (producto.length === 0) {
+    const [[producto]] = await db.query("SELECT * FROM productos WHERE id = ? AND user_id = ?", [id, userId]);
+    if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
-    return res.json(producto[0]);
+    return res.json(producto);
   } catch (error) {
-    return res.status(500).json({ message: "Error al obtener el producto", error });
-  }
-};
-
-exports.createProducto = async (req, res) => {
-  let {
-    id,
-    sku,
-    nombre,
-    descripcion,
-    imagen,
-    precio,
-    stock,
-    categoria,
-    activo,
-    codigo_barras,
-  } = req.body;
-  try {
-    const userId = req.user.user_id;
-    if (!id || !id.trim()) id = generarIdCorto();
-    if (!categoria)
-      return res.status(400).json({ message: "No hay categoría para este producto" });
-    const [catResult] = await db.query(
-      "SELECT category_id FROM product_categories WHERE name = ? AND user_id = ?",
-      [categoria, userId]
-    );
-    if (catResult.length === 0) {
-      return res.status(400).json({
-        message: "La categoría no existe. Crea la categoría primero.",
-      });
-    }
-    const categoria_id = catResult[0].category_id;
-    const precioFinal = precio !== undefined && precio !== null ? Number(precio) : 0;
-    await db.query(
-      `INSERT INTO productos
-       (id, user_id, sku, nombre, descripcion, imagen, precio, stock, categoria_id, activo, codigo_barras)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        userId,
-        sku || "",
-        nombre || "",
-        descripcion || "",
-        imagen || null,
-        precioFinal,
-        stock || 0,
-        categoria_id,
-        activo === undefined ? 1 : activo,
-        codigo_barras || "",
-      ]
-    );
-    return res.json({ message: "OK" });
-  } catch (error) {
-    return res.status(500).json({ message: "Error al crear producto", error });
+    return res.status(500).json({ message: "Error al obtener producto", error });
   }
 };
 
 exports.updateProducto = async (req, res) => {
   const { id } = req.params;
-  const {
-    sku,
-    nombre,
-    descripcion,
-    imagen,
-    precio,
-    stock,
-    categoria,
-    activo,
-    codigo_barras,
-  } = req.body;
+  const userId = req.user.user_id;
+  const { sku, nombre, descripcion, imagen, precio, stock, categoria, activo, codigo_barras } = req.body;
   try {
-    const userId = req.user.user_id;
-    if (!categoria)
-      return res.status(400).json({ message: "No hay categoría para este producto" });
-    const [catResult] = await db.query(
-      "SELECT category_id FROM product_categories WHERE name = ? AND user_id = ?",
-      [categoria, userId]
-    );
-    if (catResult.length === 0) {
-      return res.status(400).json({
-        message: "La categoría no existe. Crea la categoría primero.",
-      });
+    let categoria_id = null;
+    if (categoria) {
+      const [catResult] = await db.query("SELECT category_id FROM product_categories WHERE name = ? AND user_id = ?", [categoria, userId]);
+      if (catResult.length === 0) {
+        return res.status(400).json({ message: "La categoría no existe." });
+      }
+      categoria_id = catResult[0].category_id;
     }
-    const categoria_id = catResult[0].category_id;
-    const precioFinal = precio !== undefined && precio !== null ? Number(precio) : 0;
-    await db.query(
-      `UPDATE productos
-       SET sku = ?, nombre = ?, descripcion = ?, imagen = ?, precio = ?, stock = ?, categoria_id = ?, activo = ?, codigo_barras = ?
+    const precioNum = precio ? Number(precio) : 0;
+
+    const [result] = await db.query(
+      `UPDATE productos 
+       SET sku = COALESCE(?, sku),
+           nombre = COALESCE(?, nombre),
+           descripcion = COALESCE(?, descripcion),
+           imagen = COALESCE(?, imagen),
+           precio = COALESCE(?, precio),
+           stock = COALESCE(?, stock),
+           categoria_id = COALESCE(?, categoria_id),
+           activo = COALESCE(?, activo),
+           codigo_barras = COALESCE(?, codigo_barras)
        WHERE id = ? AND user_id = ?`,
-      [
-        sku || "",
-        nombre || "",
-        descripcion || "",
-        imagen || null,
-        precioFinal,
-        stock || 0,
-        categoria_id,
-        activo === undefined ? 1 : activo,
-        codigo_barras || "",
-        id,
-        userId,
-      ]
+      [sku, nombre, descripcion, imagen, precioNum, stock, categoria_id, activo, codigo_barras, id, userId]
     );
-    return res.json({ message: "OK" });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Producto no encontrado o no modificado." });
+    }
+    return res.json({ message: "Producto actualizado correctamente." });
   } catch (error) {
     return res.status(500).json({ message: "Error al actualizar producto", error });
   }
@@ -262,32 +176,25 @@ exports.updateProducto = async (req, res) => {
 
 exports.deleteProducto = async (req, res) => {
   const { id } = req.params;
+  const userId = req.user.user_id;
   try {
-    const userId = req.user.user_id;
-    await db.query("DELETE FROM productos WHERE id = ? AND user_id = ?", [
-      id,
-      userId,
-    ]);
-    return res.json({ message: "OK" });
+    const [result] = await db.query("DELETE FROM productos WHERE id = ? AND user_id = ?", [id, userId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+    return res.json({ message: "Producto eliminado correctamente." });
   } catch (error) {
     return res.status(500).json({ message: "Error al eliminar producto", error });
   }
 };
 
-// ============== EXPORTAR EXCEL (8 COLUMNAS) ==============
+// =================== EXPORTAR EXCEL ===================
+
 exports.exportExcel = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const [productos] = await db.query(
-      `SELECT
-         p.sku,
-         p.nombre,
-         p.descripcion,
-         p.imagen,
-         p.precio,
-         p.activo,
-         p.codigo_barras,
-         pc.name AS categoria
+      `SELECT p.sku, p.nombre, p.descripcion, p.imagen, p.precio, p.activo, p.codigo_barras, pc.name AS categoria
        FROM productos p
        LEFT JOIN product_categories pc ON p.categoria_id = pc.category_id
        WHERE p.user_id = ?`,
@@ -295,80 +202,37 @@ exports.exportExcel = async (req, res) => {
     );
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Productos", {
-      properties: { defaultRowHeight: 60 },
-    });
-
-    // Solo las columnas solicitadas
+    const worksheet = workbook.addWorksheet("Productos");
+    
     worksheet.columns = [
-      { header: "SKU",           key: "sku",           width: 12 },
-      { header: "NOMBRE",        key: "nombre",        width: 20 },
-      { header: "DESCRIPCION",   key: "descripcion",   width: 25 },
-      { header: "IMAGEN",        key: "imagen_col",    width: 15 },
-      { header: "PRECIO",        key: "precio",        width: 12 },
-      { header: "ACTIVO",        key: "activo",        width: 8  },
-      { header: "CODIGO_BARRAS", key: "codigo_barras", width: 20 },
-      { header: "CATEGORIA",     key: "categoria",     width: 15 },
+      { header: "SKU", key: "sku", width: 12 },
+      { header: "Nombre", key: "nombre", width: 25 },
+      { header: "Descripción", key: "descripcion", width: 30 },
+      { header: "Imagen", key: "imagen", width: 20 },
+      { header: "Precio", key: "precio", width: 10 },
+      { header: "Activo", key: "activo", width: 8 },
+      { header: "Código de Barras", key: "codigo_barras", width: 20 },
+      { header: "Categoría", key: "categoria", width: 15 }
     ];
+
     worksheet.getRow(1).font = { bold: true };
 
-    if (productos.length > 0) {
-      for (const p of productos) {
-        const activoTexto = p.activo ? "V" : "X";
-        const row = worksheet.addRow({
-          sku: p.sku,
-          nombre: p.nombre,
-          descripcion: p.descripcion,
-          imagen_col: "",
-          precio: p.precio,
-          activo: activoTexto,
-          codigo_barras: p.codigo_barras || "",
-          categoria: p.categoria || "",
-        });
-        row.height = 70;
+    productos.forEach((p) => {
+      worksheet.addRow({
+        sku: p.sku,
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        imagen: p.imagen ? "✔" : "✘",
+        precio: p.precio,
+        activo: p.activo ? "Sí" : "No",
+        codigo_barras: p.codigo_barras || "",
+        categoria: p.categoria || "",
+      });
+    });
 
-        if (p.imagen) {
-          let base64Data = p.imagen;
-          let extension = "png";
-          const match = base64Data.match(/^data:image\/(\w+);base64,/);
-          if (match) {
-            extension = match[1];
-            base64Data = base64Data.replace(/^data:image\/\w+;base64,/, "");
-          }
-          const imageId = workbook.addImage({
-            base64: base64Data,
-            extension,
-          });
-          const rowIndex = row.number;
-          // Insertamos la imagen en la columna "IMAGEN" (col 4)
-          worksheet.addImage(imageId, {
-            tl: { col: 3, row: rowIndex - 1 },
-            ext: { width: 60, height: 60 },
-          });
-        }
-      }
-    }
+    res.setHeader("Content-Disposition", 'attachment; filename="productos.xlsx"');
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-    // Bordes en toda la hoja
-    const totalRows = worksheet.rowCount;
-    const totalCols = worksheet.columnCount;
-    for (let r = 1; r <= totalRows; r++) {
-      for (let c = 1; c <= totalCols; c++) {
-        const cell = worksheet.getCell(r, c);
-        cell.border = {
-          top: { style: "thin" },
-          left: { style: "thin" },
-          bottom: { style: "thin" },
-          right: { style: "thin" },
-        };
-      }
-    }
-
-    res.setHeader("Content-Disposition", 'attachment; filename="productos_tic.xlsx"');
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
     const buffer = await workbook.xlsx.writeBuffer();
     return res.send(buffer);
   } catch (error) {
@@ -376,127 +240,131 @@ exports.exportExcel = async (req, res) => {
   }
 };
 
-// ========== IMPORTAR EXCEL CORREGIDO ==========
+// =================== IMPORTAR EXCEL ===================
+
 exports.importExcel = (req, res) => {
   const uploadExcel = multer({ storage: multer.memoryStorage() }).single("excel");
   uploadExcel(req, res, async (err) => {
     if (err) {
-      return res.status(400).json({ message: "Error al subir archivo Excel" });
+      console.error("Error al subir el archivo Excel:", err);
+      return res.status(400).json({ message: "Error al subir archivo Excel", error: err });
     }
     try {
       const userId = req.user.user_id;
       if (!req.file) {
         return res.status(400).json({ message: "No se recibió ningún archivo Excel" });
       }
-      // Categoría a la que se importan los productos (o "Impresoras" por defecto)
-      const categoryName = req.body.categoryName || "Impresoras";
-      let categoria_id;
-      const [catRes] = await db.query(
+
+      // Se obtiene el nombre de la categoría enviado desde el Frontend
+      const categoryName = req.body.categoryName;
+      if (!categoryName) {
+        return res.status(400).json({ message: "El nombre de la categoría es requerido." });
+      }
+
+      // Buscar la categoría en la base de datos
+      const [catResult] = await db.query(
         "SELECT category_id FROM product_categories WHERE name = ? AND user_id = ?",
         [categoryName, userId]
       );
-      if (catRes.length === 0) {
-        // Crear categoría si no existe
-        const [result] = await db.query(
-          "INSERT INTO product_categories (name, user_id) VALUES (?, ?)",
-          [categoryName, userId]
-        );
-        categoria_id = result.insertId;
-      } else {
-        categoria_id = catRes[0].category_id;
+      if (catResult.length === 0) {
+        return res.status(400).json({ message: "La categoría especificada no existe." });
       }
+      const category_id = catResult[0].category_id;
 
+      // Cargar el archivo Excel en memoria
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(req.file.buffer);
       const worksheet = workbook.worksheets[0];
+
       const rows = [];
-
-      // El Excel tiene 7 columnas en este orden:
-      // 1) ID (IGNORAR, el sistema genera su propio id)
-      // 2) SKU
-      // 3) Nombre
-      // 4) Descripción
-      // 5) Codigo Qr
-      // 6) Stock
-      // 7) Precio
-
       worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-        if (rowNumber === 1) return; // saltar encabezado
-        const vals = row.values;
+        if (rowNumber === 1) {
+          console.log("Encabezado:", row.values);
+          return;
+        }
+        console.log(`Fila ${rowNumber}:`, row.values);
+        // Se espera el siguiente orden:
+        // row.values[2] = SKU, [3] = Nombre, [4] = Descripción, [5] = Codigo Qr, [6] = Stock, [7] = Precio
+        const sku = row.values[2] ? String(row.values[2]).trim() : "";
+        const nombre = row.values[3] ? String(row.values[3]).trim() : "";
+        const descripcion = row.values[4] ? String(row.values[4]).trim() : "";
+        const codigo_barras = row.values[5] ? String(row.values[5]).trim() : "";
+        const stock = row.values[6] ? Number(row.values[6]) : 0;
+        const precio = row.values[7] ? Number(row.values[7]) : 0;
 
-        // ID => vals[1] (ignorado)
-        const rawSKU         = vals[2] || "";
-        const rawNombre      = vals[3] || "";
-        const rawDescripcion = vals[4] || "";
-        const rawCodigo      = vals[5] || "";
-        let   rawStock       = vals[6] || 0;
-        let   rawPrecio      = vals[7] || 0;
-
-        // Convertir stock a entero
-        const finalStock = parseInt(String(rawStock).replace(/[^0-9]/g, ""), 10) || 0;
-
-        // Convertir precio, quitando $, espacios, etc. Conservamos decimales
-        const priceStr   = String(rawPrecio).replace(/[^0-9.]/g, "");
-        const finalPrecio = parseFloat(priceStr) || 0;
-
-        rows.push({
-          sku: String(rawSKU).trim(),
-          nombre: String(rawNombre).trim(),
-          descripcion: String(rawDescripcion).trim(),
-          codigo_barras: String(rawCodigo).replace(/[^0-9]/g, ""),
-          stock: finalStock,
-          precio: finalPrecio,
-          activo: 0,     // Inactivo por defecto
-          imagen: null,  // Se edita luego manualmente
-        });
+        if (!nombre) {
+          console.warn(`Fila ${rowNumber} omitida: nombre vacío`);
+          return;
+        }
+        rows.push({ sku, nombre, descripcion, codigo_barras, stock, precio });
       });
 
-      let insertCount = 0;
-      for (const data of rows) {
-        // Saltar si no hay nombre
-        if (!data.nombre) continue;
-
-        // Evitar duplicados por nombre
-        const [dup] = await db.query(
-          "SELECT * FROM productos WHERE LOWER(nombre) = ? AND user_id = ?",
-          [data.nombre.toLowerCase(), userId]
-        );
-        if (dup.length > 0) {
-          // Ya existe => saltar
-          continue;
-        }
-
-        // Generar ID aleatorio
-        const newId = generarIdCorto();
-        // Si el SKU viene vacío en el Excel, generar uno aleatorio
-        const finalSku = data.sku ? data.sku : generarIdCorto();
-
-        await db.query(
-          `INSERT INTO productos
-           (id, user_id, sku, nombre, descripcion, imagen, precio, stock, categoria_id, activo, codigo_barras)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            newId,
-            userId,
-            finalSku,
-            data.nombre,
-            data.descripcion,
-            data.imagen,
-            data.precio,
-            data.stock,
-            categoria_id,
-            data.activo,
-            data.codigo_barras,
-          ]
-        );
-        insertCount++;
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "No se encontraron filas válidas en el archivo Excel." });
       }
 
-      return res.json({ message: "OK", total: insertCount });
+      for (const data of rows) {
+        const id = generarIdCorto();
+        await db.query(
+          "INSERT INTO productos (id, sku, nombre, descripcion, precio, stock, user_id, categoria_id, activo, codigo_barras) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          [
+            id,
+            data.sku,
+            data.nombre,
+            data.descripcion,
+            data.precio,
+            data.stock,
+            userId,
+            category_id,
+            0,
+            data.codigo_barras
+          ]
+        );
+      }
+
+      return res.json({ message: "Importación completada con éxito.", inserted: rows.length });
     } catch (error) {
+      console.error("Error al importar Excel:", error);
       return res.status(500).json({ message: "Error al importar Excel", error });
     }
   });
 };
 
-module.exports = exports;
+// =================== CAJA ===================
+
+exports.getProductoByCodigo = async (req, res) => {
+  const { codigo } = req.params;
+  const userId = req.user.user_id;
+  try {
+    const [[producto]] = await db.query(
+      "SELECT * FROM productos WHERE codigo_barras = ? AND user_id = ?",
+      [codigo, userId]
+    );
+    if (!producto) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+    return res.json(producto);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al buscar producto por código", error });
+  }
+};
+
+exports.actualizarStock = async (req, res) => {
+  const { id, stock } = req.body;
+  const userId = req.user.user_id;
+  if (typeof stock === "undefined") {
+    return res.status(400).json({ message: "Stock es obligatorio." });
+  }
+  try {
+    const [result] = await db.query(
+      "UPDATE productos SET stock = ? WHERE id = ? AND user_id = ?",
+      [stock, id, userId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Producto no encontrado o no actualizado." });
+    }
+    return res.json({ message: "Stock actualizado correctamente." });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al actualizar stock", error });
+  }
+};

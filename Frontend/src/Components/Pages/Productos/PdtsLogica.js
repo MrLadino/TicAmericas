@@ -16,9 +16,7 @@ export function agregarProducto(productos, nuevoProducto) {
 }
 
 export function editarProducto(productos, productoEditado) {
-  return productos.map((p) =>
-    p.id === productoEditado.id ? productoEditado : p
-  );
+  return productos.map((p) => (p.id === productoEditado.id ? productoEditado : p));
 }
 
 export function eliminarProducto(productos, productoId) {
@@ -26,15 +24,16 @@ export function eliminarProducto(productos, productoId) {
 }
 
 export function toggleEstadoProducto(productos, productoId) {
-  return productos.map((p) =>
-    p.id === productoId ? { ...p, activo: !p.activo } : p
-  );
+  return productos.map((p) => (p.id === productoId ? { ...p, activo: !p.activo } : p));
 }
 
-export function filtrarProductosPorCategoria(productos, categoriaSeleccionada) {
-  if (categoriaSeleccionada === "General") return productos;
-  if (categoriaSeleccionada === "sin_categorias") return [];
-  return productos.filter((p) => p.categoria === categoriaSeleccionada);
+export function filtrarProductosPorCategoria(productos, categoriaSeleccionada, categorias) {
+  if (!categoriaSeleccionada || categoriaSeleccionada === "General") return productos;
+  
+  const catObj = categorias.find(cat => cat.name === categoriaSeleccionada);
+  if (!catObj) return [];
+  
+  return productos.filter((p) => p.categoria_id === catObj.id);
 }
 
 export function filtrarProductosPorEstado(productos, estadoFiltro) {
@@ -81,7 +80,18 @@ export function eliminarCategoria(productos, categorias, categoriaId) {
   return { productosActualizados, categoriasActualizadas };
 }
 
+// ====================== NUEVA FUNCIÓN PARA FILTRAR GLOBALMENTE ======================
+export function filtrarGlobal(productos, busqueda) {
+  if (!busqueda.trim()) return productos;
+  return productos.filter((p) =>
+    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (p.descripcion && p.descripcion.toLowerCase().includes(busqueda.toLowerCase())) ||
+    (p.sku && p.sku.toLowerCase().includes(busqueda.toLowerCase()))
+  );
+}
+
 // ====================== FUNCIONES PARA API (CRUD) ======================
+
 export async function getAllProductos(token) {
   const res = await fetch("http://localhost:5000/api/productos", {
     headers: { Authorization: `Bearer ${token}` },
@@ -143,7 +153,7 @@ export async function toggleProductoActivoInDB(productId, token) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify(updated),
   });
@@ -167,7 +177,7 @@ export async function createCategoriaInDB(name, token) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ name }),
   });
@@ -183,7 +193,7 @@ export async function updateCategoriaInDB(id, newName, token) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ name: newName }),
   });
