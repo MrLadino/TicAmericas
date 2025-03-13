@@ -52,6 +52,7 @@ const Productos = () => {
   const [mostrarModalArchivo, setMostrarModalArchivo] = useState(false);
   const [archivoExcel, setArchivoExcel] = useState(null);
 
+  // Confirmación para eliminar producto/categoría
   const [confirmacion, setConfirmacion] = useState(null);
   const mostrarConfirmacion = (mensaje, onConfirm) => {
     setConfirmacion({ mensaje, onConfirm });
@@ -91,6 +92,7 @@ const Productos = () => {
       });
   }, [isAdmin]);
 
+  // Filtrado de productos
   let productosCoincidentes;
   if (busqueda.trim()) {
     productosCoincidentes = filtrarGlobal(productos, busqueda);
@@ -104,6 +106,7 @@ const Productos = () => {
 
   const manejarBusqueda = (e) => setBusqueda(e.target.value);
 
+  // CRUD de productos
   const handleAgregarProducto = async (nuevo) => {
     if (
       !nuevo.sku?.trim() ||
@@ -167,7 +170,6 @@ const Productos = () => {
       mostrarNotificacion(error.message, "error");
     }
   };
-
   const confirmarEliminarProducto = (id) => {
     mostrarConfirmacion("¿Estás seguro de eliminar este producto?", () =>
       handleEliminarProductoEnModal(id)
@@ -187,6 +189,7 @@ const Productos = () => {
     }
   };
 
+  // CRUD de categorías
   const handleAgregarCategoria = async (nombre) => {
     const categoriaLimpia = nombre.trim();
     if (!categoriaLimpia) {
@@ -254,13 +257,13 @@ const Productos = () => {
       mostrarNotificacion(error.message, "error");
     }
   };
-
   const confirmarEliminarCategoria = () => {
     mostrarConfirmacion("¿Estás seguro de eliminar esta categoría?", () =>
       handleEliminarCategoriaEnModal()
     );
   };
 
+  // Abrir/Cerrar modales
   const abrirModalProducto = (modo, producto = null) => {
     setEditandoCategoria(false);
     setModoEdicion(modo);
@@ -301,6 +304,7 @@ const Productos = () => {
     setNuevoNombreCategoria("");
   };
 
+  // Excel
   const descargarExcel = () => {
     const token = localStorage.getItem("token");
     window.open(`http://localhost:5000/api/productos/export-excel?token=${token}`, "_blank");
@@ -373,10 +377,14 @@ const Productos = () => {
         </div>
       )}
 
-      {/* MODAL DE CONFIRMACIÓN con posición encima */}
+      {/* 
+        MODAL DE CONFIRMACIÓN
+        Se le asigna z-[999999] y flex items-center justify-center
+        para que quede encima de cualquier otro modal.
+      */}
       {confirmacion && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white p-6 rounded-xl w-96 shadow-2xl transition duration-300">
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-[999999] flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl">
             <h3 className="text-2xl font-semibold mb-4 text-red-700">TIC Americas</h3>
             <p className="text-gray-700 mb-6">{confirmacion.mensaje}</p>
             <div className="flex justify-end space-x-4">

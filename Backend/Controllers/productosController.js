@@ -2,13 +2,16 @@ const db = require("../Config/db");
 const ExcelJS = require("exceljs");
 const multer = require("multer");
 
-// Generar un ID corto (5 dígitos)
+/* =================== AYUDA A OCULTAR TOKENS EN LOGS (ejemplo) =================== */
+// Si en algún punto quisieras loguear el token, en lugar de console.log(token),
+// harías: console.log(token ? token.slice(0, 5) + "...(hidden)" : "No token");
+
+/* Generar un ID corto (5 dígitos) */
 function generarIdCorto() {
   return String(Math.floor(10000 + Math.random() * 90000));
 }
 
 // =================== CATEGORÍAS ===================
-
 exports.getCategorias = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -79,7 +82,6 @@ exports.deleteCategoria = async (req, res) => {
 };
 
 // =================== PRODUCTOS ===================
-
 exports.createProducto = async (req, res) => {
   let { sku, nombre, descripcion, imagen, precio, stock, categoria, activo, codigo_barras } = req.body;
   try {
@@ -189,7 +191,6 @@ exports.deleteProducto = async (req, res) => {
 };
 
 // =================== EXPORTAR EXCEL ===================
-
 exports.exportExcel = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -241,7 +242,6 @@ exports.exportExcel = async (req, res) => {
 };
 
 // =================== IMPORTAR EXCEL ===================
-
 exports.importExcel = (req, res) => {
   const uploadExcel = multer({ storage: multer.memoryStorage() }).single("excel");
   uploadExcel(req, res, async (err) => {
@@ -255,13 +255,11 @@ exports.importExcel = (req, res) => {
         return res.status(400).json({ message: "No se recibió ningún archivo Excel" });
       }
 
-      // Se obtiene el nombre de la categoría enviado desde el Frontend
       const categoryName = req.body.categoryName;
       if (!categoryName) {
         return res.status(400).json({ message: "El nombre de la categoría es requerido." });
       }
 
-      // Buscar la categoría en la base de datos
       const [catResult] = await db.query(
         "SELECT category_id FROM product_categories WHERE name = ? AND user_id = ?",
         [categoryName, userId]
@@ -271,7 +269,6 @@ exports.importExcel = (req, res) => {
       }
       const category_id = catResult[0].category_id;
 
-      // Cargar el archivo Excel en memoria
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(req.file.buffer);
       const worksheet = workbook.worksheets[0];
@@ -283,8 +280,7 @@ exports.importExcel = (req, res) => {
           return;
         }
         console.log(`Fila ${rowNumber}:`, row.values);
-        // Se espera el siguiente orden:
-        // row.values[2] = SKU, [3] = Nombre, [4] = Descripción, [5] = Codigo Qr, [6] = Stock, [7] = Precio
+        // Se espera el orden: [2] = SKU, [3] = Nombre, [4] = Descripción, [5] = Codigo Qr, [6] = Stock, [7] = Precio
         const sku = row.values[2] ? String(row.values[2]).trim() : "";
         const nombre = row.values[3] ? String(row.values[3]).trim() : "";
         const descripcion = row.values[4] ? String(row.values[4]).trim() : "";
@@ -331,7 +327,6 @@ exports.importExcel = (req, res) => {
 };
 
 // =================== CAJA ===================
-
 exports.getProductoByCodigo = async (req, res) => {
   const { codigo } = req.params;
   const userId = req.user.user_id;
@@ -349,22 +344,46 @@ exports.getProductoByCodigo = async (req, res) => {
   }
 };
 
+/* =================== ACTUALIZAR STOCK CON 'cantidadVendida' =================== */
 exports.actualizarStock = async (req, res) => {
-  const { id, stock } = req.body;
-  const userId = req.user.user_id;
-  if (typeof stock === "undefined") {
-    return res.status(400).json({ message: "Stock es obligatorio." });
-  }
   try {
+    const userId = req.user.user_id;
+    const { id, cantidadVendida } = req.body;
+    if (!id || !cantidadVendida) {
+      return res.status(400).json({ message: "Faltan datos: id o cantidadVendida." });
+    }
+
+    // 1. Buscar el producto
+    const [[producto]] = await db.query(
+      "SELECT * FROM productos WHERE id = ? AND user_id = ?",
+      [id, userId]
+    );
+    if (!producto) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+
+    // 2. Calcular nuevo stock
+    const nuevoStock = producto.stock - Number(cantidadVendida);
+    if (nuevoStock < 0) {
+      return res.status(400).json({ message: "No hay stock suficiente." });
+    }
+
+    // 3. Actualizar en la base de datos
     const [result] = await db.query(
       "UPDATE productos SET stock = ? WHERE id = ? AND user_id = ?",
-      [stock, id, userId]
+      [nuevoStock, id, userId]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Producto no encontrado o no actualizado." });
     }
-    return res.json({ message: "Stock actualizado correctamente." });
+
+    // 4. Responder con el nuevo stock
+    return res.json({
+      message: "Stock actualizado correctamente.",
+      nuevoStock
+    });
   } catch (error) {
+    console.error("Error al actualizar stock:", error);
     return res.status(500).json({ message: "Error al actualizar stock", error });
   }
 };
