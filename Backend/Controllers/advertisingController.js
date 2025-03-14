@@ -1,16 +1,32 @@
+// Backend/Controllers/advertisingController.js
 const db = require("../Config/db");
 const fs = require("fs");
 const path = require("path");
 
 // GET /api/advertising
-// Lista todas las categorías de publicidad del usuario autenticado con sus archivos
+// Lista todas las categorías de publicidad con sus archivos.
+// Si el usuario autenticado es admin, se muestran sus propias categorías; si no, se muestran las categorías de los administradores.
 exports.getAdvertising = async (req, res) => {
   try {
-    const userId = req.user.user_id;
-    const [categories] = await db.query(
-      "SELECT * FROM advertising_categories WHERE user_id = ?",
-      [userId]
-    );
+    let categories;
+    if (req.user.role === "admin") {
+      // Si es admin, se muestran sus categorías
+      const [cats] = await db.query(
+        "SELECT * FROM advertising_categories WHERE user_id = ?",
+        [req.user.user_id]
+      );
+      categories = cats;
+    } else {
+      // Si no es admin, se muestran las categorías de los administradores
+      const [cats] = await db.query(
+        `SELECT ac.*
+         FROM advertising_categories ac
+         JOIN users u ON ac.user_id = u.user_id
+         WHERE u.role = 'admin'`
+      );
+      categories = cats;
+    }
+
     const categoriesWithFiles = await Promise.all(
       categories.map(async (cat) => {
         const [files] = await db.query(

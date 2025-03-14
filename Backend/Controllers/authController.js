@@ -1,4 +1,4 @@
-// Backend/controllers/authController.js
+// Backend/Controllers/authController.js
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import db from "../Config/db.js";
@@ -11,6 +11,7 @@ const { JWT_SECRET = "por_favor_cambia_este_secreto" } = process.env;
 
 /**
  * OLVIDÉ MI CONTRASEÑA
+ * POST /api/auth/forgot-password
  */
 export const forgotPassword = async (req, res) => {
   try {
@@ -28,7 +29,11 @@ export const forgotPassword = async (req, res) => {
     const token = crypto.randomBytes(20).toString("hex");
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
-    await db.query("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)", [user.user_id, token, expires]);
+    await db.query("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)", [
+      user.user_id,
+      token,
+      expires,
+    ]);
 
     const resetLink = `http://localhost:5173/reset-password?token=${token}`;
     await sendMail({
@@ -38,10 +43,12 @@ export const forgotPassword = async (req, res) => {
         <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace o pégalo en tu navegador:</p>
         <p><a href="${resetLink}">${resetLink}</a></p>
         <p>Este enlace expira en 1 hora.</p>
-      `
+      `,
     });
 
-    return res.json({ message: "Se ha enviado un correo con instrucciones para restablecer tu contraseña." });
+    return res.json({
+      message: "Se ha enviado un correo con instrucciones para restablecer tu contraseña.",
+    });
   } catch (error) {
     console.error("Error en forgotPassword:", error);
     return res.status(500).json({ message: "Error en el servidor." });
@@ -50,6 +57,7 @@ export const forgotPassword = async (req, res) => {
 
 /**
  * RESETEAR CONTRASEÑA
+ * POST /api/auth/reset-password
  */
 export const resetPassword = async (req, res) => {
   try {
@@ -78,6 +86,34 @@ export const resetPassword = async (req, res) => {
     return res.json({ message: "Contraseña restablecida con éxito." });
   } catch (error) {
     console.error("Error en resetPassword:", error);
+    return res.status(500).json({ message: "Error en el servidor." });
+  }
+};
+
+/**
+ * VERIFICAR CONTRASEÑA
+ * POST /api/auth/validate-password
+ */
+export const verifyPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "La contraseña es obligatoria." });
+    }
+    const userId = req.user.user_id;
+    const [rows] = await db.query("SELECT * FROM users WHERE user_id = ?", [userId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado." });
+    }
+    const userRecord = rows[0];
+    const match = await bcrypt.compare(password, userRecord.password);
+    if (match) {
+      return res.json({ valid: true });
+    } else {
+      return res.status(401).json({ valid: false, message: "Contraseña incorrecta." });
+    }
+  } catch (error) {
+    console.error("Error en verifyPassword:", error);
     return res.status(500).json({ message: "Error en el servidor." });
   }
 };

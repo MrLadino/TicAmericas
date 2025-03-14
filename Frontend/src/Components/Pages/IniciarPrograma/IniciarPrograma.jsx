@@ -2,6 +2,8 @@ import { useState } from "react";
 import useIniciarPrograma from "./IPLogica";
 import iniciarImg from "../../../assets/Iniciar.png";
 import administrarImg from "../../../assets/Logo.png";
+// Ícono/imagen para "Categorías Activas" (cámbialo si tienes otro):
+import categoriasImg from "../../../assets/Logo.png"; // Reemplaza con tu imagen real
 
 const IniciarPrograma = () => {
   const {
@@ -122,6 +124,17 @@ const IniciarPrograma = () => {
     closeAddCategoryModal();
   };
 
+  // ====== NUEVO PANEL PARA "CATEGORÍAS ACTIVAS" ======
+  const [showActiveCategoriesPanel, setShowActiveCategoriesPanel] = useState(false);
+
+  const openActiveCategoriesPanel = () => {
+    setShowActiveCategoriesPanel(true);
+  };
+
+  const closeActiveCategoriesPanel = () => {
+    setShowActiveCategoriesPanel(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 transition-all duration-500">
       <div className="mt-40 mb-16 max-w-2xl w-full bg-white p-8 sm:p-10 rounded-2xl shadow-2xl text-center transform hover:scale-105 transition duration-500">
@@ -132,7 +145,7 @@ const IniciarPrograma = () => {
 
         {/* ====== BOTONES PRINCIPALES ====== */}
         <div className="flex flex-col sm:flex-row justify-around items-center sm:space-x-6 mb-8">
-          {/* Botón Iniciar */}
+          {/* Botón Iniciar (Izquierda) */}
           <div className="flex flex-col items-center mb-4 sm:mb-0">
             <img
               src={iniciarImg}
@@ -150,8 +163,8 @@ const IniciarPrograma = () => {
             )}
           </div>
 
-          {/* Botón Administrar */}
-          <div className="flex flex-col items-center">
+          {/* Botón Administrar Publicidad (Centro) */}
+          <div className="flex flex-col items-center mb-4 sm:mb-0">
             <img
               src={administrarImg}
               alt="Administrar"
@@ -162,10 +175,25 @@ const IniciarPrograma = () => {
               Administrar Publicidad
             </p>
           </div>
+
+          {/* NUEVO: Botón Categorías Activas (Derecha) */}
+          <div className="flex flex-col items-center">
+            <img
+              src={categoriasImg}
+              alt="Categorías Activas"
+              className="w-24 h-24 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-full cursor-pointer hover:scale-105 shadow-lg transition-transform duration-300"
+              onClick={openActiveCategoriesPanel}
+            />
+            <p className="mt-2 text-gray-700 font-semibold text-sm sm:text-base">
+              Categorías Activas
+            </p>
+          </div>
         </div>
 
-        {/* ====== CATEGORÍA SELECCIONADA ====== */}
-        {selectedCategoryName ? (
+        {/* ====== CATEGORÍA SELECCIONADA O MENSAJE DE "NO HAY NOVEDADES" ====== */}
+        {categorias.length === 0 ? (
+          <p className="text-gray-700 font-semibold mb-4">No hay novedades por ahora</p>
+        ) : selectedCategoryName ? (
           <p className="text-gray-700 font-semibold mb-4">
             Categoría seleccionada: {selectedCategoryName}
           </p>
@@ -173,7 +201,7 @@ const IniciarPrograma = () => {
           <p className="text-gray-700 font-semibold mb-4">No hay categoría seleccionada</p>
         )}
 
-        {/* ====== PANEL DE ADMINISTRACIÓN ====== */}
+        {/* ====== PANEL DE ADMINISTRACIÓN (si modo === "administrar") ====== */}
         {modo === "administrar" && (
           <div className="text-left mt-6">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">
@@ -307,7 +335,7 @@ const IniciarPrograma = () => {
 
         {/* ====== PANEL DE ARCHIVO SELECCIONADO ====== */}
         {mostrarPanel && archivoSeleccionado && (
-          <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 transition-all duration-300">
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-[999999] transition-all duration-300">
             <div className="bg-white rounded-lg shadow-2xl p-6 w-96 transform hover:scale-105 transition duration-300">
               <h4 className="text-lg font-bold text-gray-800 mb-4">Información del archivo</h4>
               <p className="text-sm text-gray-600 mb-2">
@@ -341,7 +369,7 @@ const IniciarPrograma = () => {
 
       {/* ====== MODAL DE CONFIRMACIÓN PARA ELIMINAR ARCHIVO ====== */}
       {showConfirmDeleteFile && fileToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 transition-all duration-300">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-[999999] transition-all duration-300">
           <div className="bg-white p-6 rounded-xl w-80 sm:w-96 shadow-2xl transform hover:scale-105 transition duration-300">
             <h2 className="text-xl font-bold mb-4 text-center text-gray-800">
               Confirmar eliminación
@@ -373,7 +401,7 @@ const IniciarPrograma = () => {
 
       {/* ====== MODAL DE CONFIRMACIÓN PARA ELIMINAR CATEGORÍA ====== */}
       {showConfirmDeleteCategory && categoryToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 transition-all duration-300">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-[999999] transition-all duration-300">
           <div className="bg-white p-6 rounded-xl w-80 sm:w-96 shadow-2xl transform hover:scale-105 transition duration-300">
             <h2 className="text-xl font-bold mb-4 text-center text-gray-800">
               Confirmar eliminación
@@ -407,7 +435,7 @@ const IniciarPrograma = () => {
 
       {/* ====== MODAL PARA EDITAR EL NOMBRE DE LA CATEGORÍA ====== */}
       {showEditCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999999] transition-all duration-300">
           <div className="bg-white p-6 rounded-xl w-96 shadow-2xl max-h-[90vh] overflow-y-auto transform hover:scale-105 transition duration-300">
             <h3 className="text-2xl font-semibold mb-4 text-red-700">Editar nombre de la categoría</h3>
             <label className="block mb-2 text-sm font-semibold text-black">
@@ -439,7 +467,7 @@ const IniciarPrograma = () => {
 
       {/* ====== MODAL PARA AGREGAR NUEVA CATEGORÍA ====== */}
       {showAddCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999999] transition-all duration-300">
           <div className="bg-white p-6 rounded-xl w-96 shadow-2xl max-h-[90vh] overflow-y-auto transform hover:scale-105 transition duration-300">
             <h3 className="text-2xl font-semibold mb-4 text-red-700">Agregar categoría</h3>
             <label className="block mb-2 text-sm font-semibold text-black">
@@ -463,6 +491,48 @@ const IniciarPrograma = () => {
                 className="bg-red-700 text-white py-2 px-4 rounded-lg hover:bg-red-800 transition"
               >
                 Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====== NUEVO MODAL: PANEL DE "CATEGORÍAS ACTIVAS" ====== */}
+      {showActiveCategoriesPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999999] transition-all duration-300">
+          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl max-h-[90vh] overflow-y-auto transform hover:scale-105 transition duration-300">
+            <h3 className="text-2xl font-semibold mb-4 text-red-700">Categorías Activas</h3>
+            <div className="max-h-64 overflow-y-auto">
+              <table className="w-full border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th className="py-2 px-4 text-left">Categoría</th>
+                    <th className="py-2 px-4 text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categorias.map((cat) => (
+                    <tr key={cat.id} className="border-b">
+                      <td className="py-2 px-4">{cat.name}</td>
+                      <td className="py-2 px-4 text-center">
+                        <button
+                          onClick={() => openConfirmDeleteCategory(cat.id)}
+                          className="bg-red-600 text-white py-1 px-3 rounded hover:bg-red-700 text-sm"
+                        >
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={closeActiveCategoriesPanel}
+                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition text-sm"
+              >
+                Cerrar
               </button>
             </div>
           </div>

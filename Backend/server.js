@@ -20,7 +20,10 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Middleware global para CORS
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:5173");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
   if (req.method === "OPTIONS") {
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
     return res.status(200).json({});
@@ -70,19 +73,22 @@ const fileFilter = (req, file, cb) => {
 };
 const upload = multer({ storage, fileFilter });
 
-// IMPORTAR el archivo user.js que define /signup y /login con la validación de rol
+// IMPORTAR rutas de usuario (signup, login, etc.)
 const userRoutes = require("./Routes/user");
-// Montar esas rutas en /api
 app.use("/api", userRoutes);
 
-// Ejemplo: Rutas adicionales (publicidad, productos, etc.)
+// IMPORTAR y montar las rutas de autenticación (incluye validate-password)
+const authRoutes = require("./Routes/auth");
+app.use("/api/auth", authRoutes);
+
+// Rutas adicionales (publicidad, productos, etc.)
 const advertisingRoutes = require("./Routes/advertising");
 app.use("/api/advertising", advertisingRoutes);
 
 const productosRoutes = require("./Routes/productos");
 app.use("/api/productos", productosRoutes);
 
-// Rutas relacionadas al perfil de usuario
+// Rutas para perfil de usuario
 app.get("/api/profile", verifyToken, async (req, res) => {
   try {
     const userId = req.user.user_id;

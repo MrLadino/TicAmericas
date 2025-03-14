@@ -5,17 +5,17 @@ dotenv.config();
 const verifyToken = (req, res, next) => {
   try {
     let token = req.header("Authorization") || req.query.token;
-    console.log("🔍 Token recibido en backend:", token);
+    console.log("🔍 Token recibido en backend:", token ? token.slice(0, 5) + "...(hidden)" : "No token");
 
     if (!token) {
-      return res.status(401).json({ message: "Acceso denegado. Token requerido." });
+      return res.status(401).json({ message: "Acceso denegado, token requerido." });
     }
 
     if (token.startsWith("Bearer ")) {
       token = token.slice(7).trim();
     }
 
-    console.log("🔍 Token después de limpiar 'Bearer':", token);
+    console.log("🔍 Token después de limpiar 'Bearer':", token ? token.slice(0, 5) + "...(hidden)" : "No token");
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded.user_id) {

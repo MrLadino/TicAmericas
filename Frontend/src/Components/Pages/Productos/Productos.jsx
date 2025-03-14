@@ -29,9 +29,9 @@ const Productos = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("");
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(isAdmin ? "" : "General");
   const [busqueda, setBusqueda] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activos");
 
@@ -52,7 +52,7 @@ const Productos = () => {
   const [mostrarModalArchivo, setMostrarModalArchivo] = useState(false);
   const [archivoExcel, setArchivoExcel] = useState(null);
 
-  // Confirmación para eliminar producto/categoría
+  // Estado para confirmación (producto o categoría)
   const [confirmacion, setConfirmacion] = useState(null);
   const mostrarConfirmacion = (mensaje, onConfirm) => {
     setConfirmacion({ mensaje, onConfirm });
@@ -73,9 +73,7 @@ const Productos = () => {
 
     getAllProductos(token)
       .then((data) => setProductos(data))
-      .catch(() => {
-        setProductos([]);
-      });
+      .catch(() => setProductos([]));
 
     getAllCategorias(token)
       .then((data) => {
@@ -84,29 +82,65 @@ const Productos = () => {
           name: cat.name || "",
         }));
         setCategorias(cats);
-        setCategoriaSeleccionada(isAdmin ? "" : "General");
+        // Se deja la categoría en vacío para que el usuario la seleccione
+        setCategoriaSeleccionada("");
       })
       .catch(() => {
         setCategorias([]);
-        setCategoriaSeleccionada(isAdmin ? "" : "General");
+        setCategoriaSeleccionada("");
       });
   }, [isAdmin]);
 
-  // Filtrado de productos
-  let productosCoincidentes;
-  if (busqueda.trim()) {
-    productosCoincidentes = filtrarGlobal(productos, busqueda);
-  } else {
-    let filtrados = filtrarProductosPorCategoria(productos, categoriaSeleccionada, categorias);
-    if (isAdmin) {
-      filtrados = filtrarProductosPorEstado(filtrados, estadoFiltro);
-    }
-    productosCoincidentes = filtrados;
-  }
-
   const manejarBusqueda = (e) => setBusqueda(e.target.value);
 
+  // =========================================================
+  // CONTROL DE FILTRADO SEGÚN SI ES ADMIN O USUARIO NORMAL
+  // =========================================================
+  let productosCoincidentes = [];
+
+  if (isAdmin) {
+    // =========== Lógica para Admin ===========
+    // Muestra productos aunque no haya categoría seleccionada
+    if (busqueda.trim()) {
+      // Si hay texto en el input de búsqueda
+      productosCoincidentes = filtrarGlobal(productos, busqueda);
+    } else {
+      // Si no hay texto de búsqueda, filtra por categoría (puede ser "")
+      productosCoincidentes = filtrarProductosPorCategoria(
+        productos,
+        categoriaSeleccionada,
+        categorias
+      );
+    }
+    // Luego filtra por estado (activos/inactivos) solo para admin
+    productosCoincidentes = filtrarProductosPorEstado(
+      productosCoincidentes,
+      estadoFiltro
+    );
+  } else {
+    // =========== Lógica para Usuario Normal ===========
+    // Si no ha seleccionado categoría, no se muestra ningún producto
+    if (!categoriaSeleccionada) {
+      productosCoincidentes = [];
+    } else {
+      // Si seleccionó categoría
+      if (busqueda.trim()) {
+        productosCoincidentes = filtrarGlobal(productos, busqueda);
+      } else {
+        productosCoincidentes = filtrarProductosPorCategoria(
+          productos,
+          categoriaSeleccionada,
+          categorias
+        );
+      }
+      // El usuario normal solo ve productos activos
+      productosCoincidentes = productosCoincidentes.filter((p) => p.activo);
+    }
+  }
+
+  // =========================================================
   // CRUD de productos
+  // =========================================================
   const handleAgregarProducto = async (nuevo) => {
     if (
       !nuevo.sku?.trim() ||
@@ -118,10 +152,7 @@ const Productos = () => {
       nuevo.stock < 0 ||
       !nuevo.categoria?.trim()
     ) {
-      mostrarNotificacion(
-        "Completa los campos obligatorios y selecciona una categoría.",
-        "error"
-      );
+      mostrarNotificacion("Completa los campos obligatorios y selecciona una categoría.", "error");
       return;
     }
     const token = localStorage.getItem("token");
@@ -170,6 +201,7 @@ const Productos = () => {
       mostrarNotificacion(error.message, "error");
     }
   };
+
   const confirmarEliminarProducto = (id) => {
     mostrarConfirmacion("¿Estás seguro de eliminar este producto?", () =>
       handleEliminarProductoEnModal(id)
@@ -189,7 +221,9 @@ const Productos = () => {
     }
   };
 
+  // =========================================================
   // CRUD de categorías
+  // =========================================================
   const handleAgregarCategoria = async (nombre) => {
     const categoriaLimpia = nombre.trim();
     if (!categoriaLimpia) {
@@ -250,20 +284,23 @@ const Productos = () => {
         name: c.name || "",
       }));
       setCategorias(cats);
-      setCategoriaSeleccionada(isAdmin ? "" : "General");
+      setCategoriaSeleccionada("");
       setMostrarModal(false);
       mostrarNotificacion("Categoría eliminada correctamente.", "success");
     } catch (error) {
       mostrarNotificacion(error.message, "error");
     }
   };
+
   const confirmarEliminarCategoria = () => {
     mostrarConfirmacion("¿Estás seguro de eliminar esta categoría?", () =>
       handleEliminarCategoriaEnModal()
     );
   };
 
+  // =========================================================
   // Abrir/Cerrar modales
+  // =========================================================
   const abrirModalProducto = (modo, producto = null) => {
     setEditandoCategoria(false);
     setModoEdicion(modo);
@@ -304,7 +341,9 @@ const Productos = () => {
     setNuevoNombreCategoria("");
   };
 
-  // Excel
+  // =========================================================
+  // Funciones para Excel
+  // =========================================================
   const descargarExcel = () => {
     const token = localStorage.getItem("token");
     window.open(`http://localhost:5000/api/productos/export-excel?token=${token}`, "_blank");
@@ -360,9 +399,12 @@ const Productos = () => {
     setArchivoExcel(null);
   };
 
+  // =========================================================
+  // Render
+  // =========================================================
   return (
     <div className="max-w-7xl mx-auto mt-20 p-8">
-      {/* ALERTA con z-[999999] para que quede encima de todo */}
+      {/* ALERTA */}
       {notificacion && (
         <div
           className={`fixed top-4 right-4 p-4 rounded-lg shadow-xl border z-[999999] transition-all duration-300 transform ${
@@ -377,14 +419,10 @@ const Productos = () => {
         </div>
       )}
 
-      {/* 
-        MODAL DE CONFIRMACIÓN
-        Se le asigna z-[999999] y flex items-center justify-center
-        para que quede encima de cualquier otro modal.
-      */}
+      {/* MODAL DE CONFIRMACIÓN */}
       {confirmacion && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-[999999] flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-96 shadow-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999999] transition-all duration-300">
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white p-6 rounded-xl w-96 shadow-2xl transition duration-300">
             <h3 className="text-2xl font-semibold mb-4 text-red-700">TIC Americas</h3>
             <p className="text-gray-700 mb-6">{confirmacion.mensaje}</p>
             <div className="flex justify-end space-x-4">
@@ -405,6 +443,7 @@ const Productos = () => {
         </div>
       )}
 
+      {/* Encabezado */}
       {isAdmin ? (
         <div className="bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-red-700 mb-8 transform hover:scale-105 transition duration-300">
           <h1 className="text-4xl font-extrabold text-red-700 text-center">
@@ -425,6 +464,7 @@ const Productos = () => {
         </div>
       )}
 
+      {/* Panel de controles */}
       {isAdmin ? (
         <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-red-700 mb-8 transform hover:scale-105 transition duration-300">
           <div className="flex flex-col lg:flex-row items-center justify-around space-y-4 lg:space-y-0 lg:space-x-6">
@@ -471,38 +511,41 @@ const Productos = () => {
             </div>
           </div>
 
-          {categoriaSeleccionada && (
-            <div className="mt-6 flex flex-col items-center space-y-4">
-              <div className="relative w-full md:w-3/4 lg:w-1/2">
-                <input
-                  type="text"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar producto..."
-                  className={`p-3 border rounded w-full text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 transition ${inputShakeStyle}`}
-                />
-              </div>
-              <div className="flex flex-wrap items-center gap-4">
-                <button
-                  onClick={() => abrirModalProducto("agregar")}
-                  className="bg-red-700 text-white py-2 px-6 rounded-lg hover:bg-red-800 text-sm transition"
-                >
-                  Agregar producto
-                </button>
-                <button
-                  onClick={abrirModalArchivo}
-                  className="bg-blue-700 text-white py-2 px-6 rounded-lg hover:bg-blue-800 text-sm transition"
-                >
-                  Agregar por archivo
-                </button>
-              </div>
-              <p className="text-red-800 font-semibold">
-                Mostrando productos {estadoFiltro.toUpperCase()}
-              </p>
+          {/*
+            El admin puede ver productos incluso sin seleccionar categoría.
+            Por eso mostramos los siguientes controles sin condicionar.
+          */}
+          <div className="mt-6 flex flex-col items-center space-y-4">
+            <div className="relative w-full md:w-3/4 lg:w-1/2">
+              <input
+                type="text"
+                value={busqueda}
+                onChange={manejarBusqueda}
+                placeholder="Buscar producto..."
+                className={`p-3 border rounded w-full text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 transition ${inputShakeStyle}`}
+              />
             </div>
-          )}
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => abrirModalProducto("agregar")}
+                className="bg-red-700 text-white py-2 px-6 rounded-lg hover:bg-red-800 text-sm transition"
+              >
+                Agregar producto
+              </button>
+              <button
+                onClick={abrirModalArchivo}
+                className="bg-blue-700 text-white py-2 px-6 rounded-lg hover:bg-blue-800 text-sm transition"
+              >
+                Agregar por archivo
+              </button>
+            </div>
+            <p className="text-red-800 font-semibold">
+              Mostrando productos {estadoFiltro.toUpperCase()}
+            </p>
+          </div>
         </div>
       ) : (
+        // Panel para usuario normal
         <div className="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-red-700 mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-around">
             <select
@@ -510,7 +553,7 @@ const Productos = () => {
               onChange={(e) => setCategoriaSeleccionada(e.target.value)}
               className="p-3 border rounded bg-gray-100 text-red-800 w-full sm:w-52 focus:ring-2 focus:ring-red-500 transition"
             >
-              <option value="General">General</option>
+              <option value="">-- Seleccione categoría --</option>
               {categorias.map((cat) => (
                 <option key={cat.id} value={cat.name}>
                   {cat.name}
@@ -528,21 +571,24 @@ const Productos = () => {
         </div>
       )}
 
-      {(isAdmin && categoriaSeleccionada) || !isAdmin ? (
+      {/*
+        Muestra la tabla de productos solo si:
+        - Eres admin (puedes ver siempre).
+        - O bien eres usuario normal y ya seleccionaste una categoría.
+      */}
+      {(isAdmin || (!isAdmin && categoriaSeleccionada)) && (
         <div className="max-h-[500px] overflow-y-auto overflow-x-hidden shadow-2xl rounded-2xl">
           <table className="w-full table-fixed border-collapse bg-white rounded-2xl">
             <thead className="bg-red-800 text-white sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left w-16">ID</th>
+                {isAdmin && <th className="px-4 py-3 text-left w-16">ID</th>}
                 <th className="px-4 py-3 text-left w-24">SKU</th>
                 <th className="px-4 py-3 text-left w-28">Imagen</th>
                 <th className="px-4 py-3 text-left w-40">Nombre</th>
                 <th className="px-4 py-3 text-left w-72">Descripción</th>
-                <th className="px-4 py-3 text-left w-20">Stock</th>
+                {isAdmin && <th className="px-4 py-3 text-left w-20">Stock</th>}
                 <th className="px-4 py-3 text-left w-20">Precio</th>
-                {isAdmin && (
-                  <th className="px-4 py-3 text-left w-28">Acciones</th>
-                )}
+                {isAdmin && <th className="px-4 py-3 text-left w-28">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -557,7 +603,9 @@ const Productos = () => {
                       : "bg-gray-300 opacity-70"
                   }`}
                 >
-                  <td className="px-4 py-3 whitespace-nowrap">{prod.id}</td>
+                  {isAdmin && (
+                    <td className="px-4 py-3 whitespace-nowrap">{prod.id}</td>
+                  )}
                   <td className="px-4 py-3 whitespace-nowrap">{prod.sku}</td>
                   <td className="px-4 py-3">
                     {prod.imagen ? (
@@ -580,7 +628,9 @@ const Productos = () => {
                       {prod.descripcion}
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{prod.stock}</td>
+                  {isAdmin && (
+                    <td className="px-4 py-3 whitespace-nowrap">{prod.stock}</td>
+                  )}
                   <td className="px-4 py-3 whitespace-nowrap">
                     ${Number(prod.precio).toFixed(2)}
                   </td>
@@ -604,7 +654,7 @@ const Productos = () => {
             </tbody>
           </table>
         </div>
-      ) : null}
+      )}
 
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
@@ -764,7 +814,7 @@ const Productos = () => {
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
                 />
 
-                {/* NUEVO: Select para cambiar la categoría */}
+                {/* Select para cambiar la categoría */}
                 <label className="block mb-2 text-sm font-semibold text-black">
                   Categoría
                 </label>
@@ -778,7 +828,7 @@ const Productos = () => {
                   }
                   className="p-3 border mb-4 w-full rounded focus:ring-2 focus:ring-red-500 transition"
                 >
-                  <option value="">-- Selecciona categoría --</option>
+                  <option value="">-- Seleccione categoría --</option>
                   {categorias.map((cat) => (
                     <option key={cat.id} value={cat.name}>
                       {cat.name}

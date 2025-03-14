@@ -14,10 +14,11 @@ function generarIdCorto() {
 // =================== CATEGORÍAS ===================
 exports.getCategorias = async (req, res) => {
   try {
-    const userId = req.user.user_id;
+    // Si el usuario autenticado no es admin, se muestran las categorías del admin (user_id = 30)
+    const targetUserId = req.user.role !== "admin" ? 30 : req.user.user_id;
     const [categorias] = await db.query(
       "SELECT * FROM product_categories WHERE user_id = ?",
-      [userId]
+      [targetUserId]
     );
     return res.json(categorias);
   } catch (error) {
@@ -116,8 +117,9 @@ exports.createProducto = async (req, res) => {
 
 exports.getProductos = async (req, res) => {
   try {
-    const userId = req.user.user_id;
-    const [productos] = await db.query("SELECT * FROM productos WHERE user_id = ?", [userId]);
+    // Si el usuario autenticado no es admin, se obtienen los productos del admin (user_id = 30)
+    const targetUserId = req.user.role !== "admin" ? 30 : req.user.user_id;
+    const [productos] = await db.query("SELECT * FROM productos WHERE user_id = ?", [targetUserId]);
     return res.json(productos);
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener productos", error });
@@ -126,9 +128,10 @@ exports.getProductos = async (req, res) => {
 
 exports.getProductoById = async (req, res) => {
   const { id } = req.params;
-  const userId = req.user.user_id;
+  // Si el usuario autenticado no es admin, se busca el producto en los del admin (user_id = 30)
+  const targetUserId = req.user.role !== "admin" ? 30 : req.user.user_id;
   try {
-    const [[producto]] = await db.query("SELECT * FROM productos WHERE id = ? AND user_id = ?", [id, userId]);
+    const [[producto]] = await db.query("SELECT * FROM productos WHERE id = ? AND user_id = ?", [id, targetUserId]);
     if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
@@ -329,11 +332,12 @@ exports.importExcel = (req, res) => {
 // =================== CAJA ===================
 exports.getProductoByCodigo = async (req, res) => {
   const { codigo } = req.params;
-  const userId = req.user.user_id;
+  // Si el usuario autenticado no es admin, se busca el producto en los del admin (user_id = 30)
+  const targetUserId = req.user.role !== "admin" ? 30 : req.user.user_id;
   try {
     const [[producto]] = await db.query(
       "SELECT * FROM productos WHERE codigo_barras = ? AND user_id = ?",
-      [codigo, userId]
+      [codigo, targetUserId]
     );
     if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado." });
