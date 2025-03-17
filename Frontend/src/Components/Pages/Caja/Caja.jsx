@@ -82,9 +82,9 @@ const Caja = () => {
   };
 
   return (
-    <div className=" mt-20 min-h-screen bg-gray-100 flex flex-col items-center py-10 px-4 text-gray-900 relative">
+    <div className="mt-20 min-h-screen bg-gray-100 flex flex-col items-center py-10 px-4 text-gray-900 relative">
       {/* ENCABEZADO */}
-      <div className=" mt-20 w-full max-w-4xl bg-red-600 text-white rounded-xl shadow-lg p-6 mb-8">
+      <div className="mt-20 w-full max-w-4xl bg-red-600 text-white rounded-xl shadow-lg p-6 mb-8">
         <h1 className="text-3xl font-extrabold mb-2">Caja - TIC Americas</h1>
         <p className="text-sm font-medium">
           Escanea el código de barras o QR para ver la información del producto.
@@ -96,14 +96,15 @@ const Caja = () => {
         <label htmlFor="qrInput" className="block text-lg font-medium text-gray-700 mb-2">
           Escanea o introduce el código de barras/QR:
         </label>
-        <div className="flex items-center gap-2">
+        {/* Ajustamos el layout a "flex-col" para que el botón quede debajo del input */}
+        <div className="flex flex-col items-start gap-2">
           <input
             type="text"
             id="qrInput"
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
             placeholder="Ingresa el código..."
-            className="flex-1 p-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-red-500"
+            className="w-full p-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-red-500"
           />
           <button
             onClick={buscarProducto}

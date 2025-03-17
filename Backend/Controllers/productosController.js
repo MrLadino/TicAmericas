@@ -12,6 +12,7 @@ function generarIdCorto() {
 }
 
 // =================== CATEGORÍAS ===================
+
 exports.getCategorias = async (req, res) => {
   try {
     // Si el usuario autenticado no es admin, se muestran las categorías del admin (user_id = 30)
@@ -330,15 +331,14 @@ exports.importExcel = (req, res) => {
 };
 
 // =================== CAJA ===================
+// Este endpoint se utiliza para escanear el código de barras/QR y mostrar la información del producto.
+// No permite realizar ventas desde este apartado.
 exports.getProductoByCodigo = async (req, res) => {
   const { codigo } = req.params;
   // Si el usuario autenticado no es admin, se busca el producto en los del admin (user_id = 30)
   const targetUserId = req.user.role !== "admin" ? 30 : req.user.user_id;
   try {
-    const [[producto]] = await db.query(
-      "SELECT * FROM productos WHERE codigo_barras = ? AND user_id = ?",
-      [codigo, targetUserId]
-    );
+    const [[producto]] = await db.query("SELECT * FROM productos WHERE codigo_barras = ? AND user_id = ?", [codigo, targetUserId]);
     if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado." });
     }
@@ -358,10 +358,7 @@ exports.actualizarStock = async (req, res) => {
     }
 
     // 1. Buscar el producto
-    const [[producto]] = await db.query(
-      "SELECT * FROM productos WHERE id = ? AND user_id = ?",
-      [id, userId]
-    );
+    const [[producto]] = await db.query("SELECT * FROM productos WHERE id = ? AND user_id = ?", [id, userId]);
     if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado." });
     }
@@ -373,19 +370,13 @@ exports.actualizarStock = async (req, res) => {
     }
 
     // 3. Actualizar en la base de datos
-    const [result] = await db.query(
-      "UPDATE productos SET stock = ? WHERE id = ? AND user_id = ?",
-      [nuevoStock, id, userId]
-    );
+    const [result] = await db.query("UPDATE productos SET stock = ? WHERE id = ? AND user_id = ?", [nuevoStock, id, userId]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Producto no encontrado o no actualizado." });
     }
 
     // 4. Responder con el nuevo stock
-    return res.json({
-      message: "Stock actualizado correctamente.",
-      nuevoStock
-    });
+    return res.json({ message: "Stock actualizado correctamente.", nuevoStock });
   } catch (error) {
     console.error("Error al actualizar stock:", error);
     return res.status(500).json({ message: "Error al actualizar stock", error });

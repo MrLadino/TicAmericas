@@ -511,7 +511,7 @@ const Productos = () => {
             </div>
           </div>
 
-          {/*
+          {/* 
             El admin puede ver productos incluso sin seleccionar categoría.
             Por eso mostramos los siguientes controles sin condicionar.
           */}
@@ -571,13 +571,17 @@ const Productos = () => {
         </div>
       )}
 
-      {/*
+      {/* 
         Muestra la tabla de productos solo si:
         - Eres admin (puedes ver siempre).
         - O bien eres usuario normal y ya seleccionaste una categoría.
       */}
       {(isAdmin || (!isAdmin && categoriaSeleccionada)) && (
-        <div className="max-h-[500px] overflow-y-auto overflow-x-hidden shadow-2xl rounded-2xl">
+        /* 
+           Se cambia overflow-x-hidden a overflow-x-auto 
+           para permitir scroll horizontal en pantallas pequeñas 
+        */
+        <div className="max-h-[500px] overflow-y-auto overflow-x-auto shadow-2xl rounded-2xl">
           <table className="w-full table-fixed border-collapse bg-white rounded-2xl">
             <thead className="bg-red-800 text-white sticky top-0">
               <tr>
@@ -587,7 +591,7 @@ const Productos = () => {
                 <th className="px-4 py-3 text-left w-40">Nombre</th>
                 <th className="px-4 py-3 text-left w-72">Descripción</th>
                 {isAdmin && <th className="px-4 py-3 text-left w-20">Stock</th>}
-                <th className="px-4 py-3 text-left w-20">Precio</th>
+                <th className="px-4 py-3 text-left w-32">Precio</th>
                 {isAdmin && <th className="px-4 py-3 text-left w-28">Acciones</th>}
               </tr>
             </thead>
